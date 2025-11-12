@@ -246,6 +246,36 @@ npm run prisma:studio
 
 Abre en `http://localhost:5555`
 
+### Seed de Datos de Prueba
+
+El proyecto incluye un seed completo en `prisma/seed.ts` que crea:
+
+| Tipo | Cantidad | Descripción |
+|------|----------|-------------|
+| Centros | 3 | Bilbao, El Roble, Hospital |
+| Usuarios | 8 | 1 admin, 3 veterinarios, 2 recepcionistas, 1 asistente |
+| Tutores | 5 | Propietarios de mascotas |
+| Pacientes | 8 | 5 caninos, 3 felinos con datos completos |
+| Citas | 3 | Programadas, confirmadas con diferentes tipos |
+| Inventario | 4 | Medicamentos e insumos con stock |
+| Proveedores | 2 | Laboratorios y distribuidores |
+| Convenios | 2 | Municipalidad y Universidad |
+
+**Credenciales de Prueba:**
+```
+Admin:         admin@vetconnect.cl / admin123
+Veterinarios:  dra.rodriguez@vetconnect.cl / admin123
+               dr.fernandez@vetconnect.cl / admin123
+               dra.lopez@vetconnect.cl / admin123
+Recepcionistas: sofia.recepcion@vetconnect.cl / admin123
+               juan.recepcion@vetconnect.cl / admin123
+```
+
+**Ejecutar seed:**
+```bash
+npm run db:seed
+```
+
 ---
 
 ## 🔌 API Endpoints
@@ -478,6 +508,7 @@ npm run test:watch          # Tests en modo watch
 - [x] Manejo centralizado de errores
 - [x] Respuestas API estandarizadas
 - [x] Documentación completa
+- [x] **Seed de datos de prueba completo (3 centros, 8 usuarios, 5 tutores, 8 pacientes, etc.)**
 
 ### ⚠️ Pendiente
 
@@ -489,7 +520,6 @@ npm run test:watch          # Tests en modo watch
 - [ ] Implementar CRUD de Cirugías
 - [ ] Implementar CRUD de Inventario
 - [ ] Implementar CRUD de Facturación
-- [ ] Crear seed de datos de prueba
 - [ ] Testing unitario
 - [ ] Testing de integración
 - [ ] Documentación API (Swagger/OpenAPI)
