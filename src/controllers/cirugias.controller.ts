@@ -260,7 +260,7 @@ export class CirugiasController {
             },
           },
           signos_vitales: {
-            orderBy: { fecha_hora: 'desc' },
+            orderBy: { fecha_registro: 'desc' },
           },
           insumos_utilizados: {
             include: {
@@ -268,7 +268,7 @@ export class CirugiasController {
                 select: {
                   id: true,
                   nombre: true,
-                  sku: true,
+                  sku_interno: true,
                   categoria: true,
                 },
               },
@@ -589,7 +589,7 @@ export class CirugiasController {
       const signosVitales = await prisma.signosVitales.create({
         data: {
           cirugia_id: parseInt(id),
-          fecha_hora: validatedData.fecha_hora ? new Date(validatedData.fecha_hora) : new Date(),
+          fecha_registro: validatedData.fecha_hora ? new Date(validatedData.fecha_hora) : new Date(),
           temperatura: validatedData.temperatura,
           frecuencia_cardiaca: validatedData.frecuencia_cardiaca,
           frecuencia_respiratoria: validatedData.frecuencia_respiratoria,
@@ -632,7 +632,7 @@ export class CirugiasController {
 
       const signosVitales = await prisma.signosVitales.findMany({
         where: { cirugia_id: parseInt(id) },
-        orderBy: { fecha_hora: 'asc' },
+        orderBy: { fecha_registro: 'asc' },
       });
 
       res.json(ApiResponseUtil.success({ signos_vitales: signosVitales }));
@@ -702,7 +702,7 @@ export class CirugiasController {
       }
 
       // Verificar stock disponible
-      const stockDisponible = parseFloat(inventario.cantidad_disponible.toString());
+      const stockDisponible = parseFloat(inventario.stock_actual.toString());
       if (stockDisponible < validatedData.cantidad) {
         res.status(400).json(ApiResponseUtil.error('Stock insuficiente'));
         return;
@@ -715,6 +715,7 @@ export class CirugiasController {
             cirugia_id: parseInt(id),
             inventario_id: validatedData.inventario_id,
             cantidad: validatedData.cantidad,
+            precio_unitario: inventario.precio_venta,
             observaciones: validatedData.observaciones,
           },
           include: {
@@ -731,7 +732,7 @@ export class CirugiasController {
         prisma.inventario.update({
           where: { id: validatedData.inventario_id },
           data: {
-            cantidad_disponible: {
+            stock_actual: {
               decrement: validatedData.cantidad,
             },
           },
@@ -739,7 +740,7 @@ export class CirugiasController {
         prisma.movimientoInventario.create({
           data: {
             inventario_id: validatedData.inventario_id,
-            tipo_movimiento: 'SALIDA_CONSUMO',
+            tipo: 'SALIDA_CONSUMO',
             cantidad: validatedData.cantidad,
             fecha_movimiento: new Date(),
             origen_destino: `Cirugía #${id}`,

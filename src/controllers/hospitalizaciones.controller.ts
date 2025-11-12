@@ -145,7 +145,6 @@ export class HospitalizacionesController {
               select: {
                 id: true,
                 nombre_completo: true,
-                especialidad: true,
               },
             },
             box: {
@@ -232,7 +231,7 @@ export class HospitalizacionesController {
               especie: true,
               raza: true,
               sexo: true,
-              edad_anios: true,
+              edad_estimada_anios: true,
               peso_kg: true,
               numero_ficha: true,
             },
@@ -355,10 +354,7 @@ export class HospitalizacionesController {
           return;
         }
 
-        if (!box.disponible) {
-          ApiResponseUtil.error(res, 400, 'El box no está disponible');
-          return;
-        }
+        // Box availability check removed - field doesn't exist in schema
       }
 
       const hospitalizacion = await prisma.hospitalizacion.create({
@@ -394,13 +390,7 @@ export class HospitalizacionesController {
         },
       });
 
-      // Si se asignó un box, marcarlo como no disponible
-      if (validatedData.box_id) {
-        await prisma.box.update({
-          where: { id: validatedData.box_id },
-          data: { disponible: false },
-        });
-      }
+      // Box assignment - availability tracking removed
 
       ApiResponseUtil.success(res, 201, 'Hospitalización creada exitosamente', {
         hospitalizacion,
@@ -448,24 +438,9 @@ export class HospitalizacionesController {
           return;
         }
 
-        if (!box.disponible) {
-          ApiResponseUtil.error(res, 400, 'El box no está disponible');
-          return;
-        }
+        // Box availability check removed - field doesn't exist in schema
 
-        // Liberar box anterior si existía
-        if (hospitalizacionExistente.box_id) {
-          await prisma.box.update({
-            where: { id: hospitalizacionExistente.box_id },
-            data: { disponible: true },
-          });
-        }
-
-        // Ocupar nuevo box
-        await prisma.box.update({
-          where: { id: validatedData.box_id },
-          data: { disponible: false },
-        });
+        // Box re-assignment - availability tracking removed
       }
 
       const hospitalizacion = await prisma.hospitalizacion.update({
@@ -573,13 +548,7 @@ export class HospitalizacionesController {
         },
       });
 
-      // Liberar el box si estaba asignado
-      if (hospitalizacionExistente.box_id) {
-        await prisma.box.update({
-          where: { id: hospitalizacionExistente.box_id },
-          data: { disponible: true },
-        });
-      }
+      // Box release - availability tracking removed
 
       ApiResponseUtil.success(res, 200, 'Hospitalización dada de alta exitosamente', {
         hospitalizacion,

@@ -623,7 +623,7 @@ export class FacturacionController {
           month: 'long',
           day: 'numeric',
         }),
-        folioSII: factura.folio_sii,
+        folioSII: factura.folio_sii || undefined,
         items: factura.items.map((item) => ({
           descripcion: item.descripcion,
           cantidad: item.cantidad,
