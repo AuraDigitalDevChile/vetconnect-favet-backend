@@ -4,7 +4,7 @@
 
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { ApiResponseUtil } from '../utils/api-response.utils';
+import { ApiResponseUtil } from '../utils/api-response.util';
 import { z } from 'zod';
 
 const prisma = new PrismaClient();

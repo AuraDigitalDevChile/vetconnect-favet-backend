@@ -4,7 +4,7 @@
 
 import { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { successResponse, errorResponse } from '../utils/responseUtil';
+import { ApiResponseUtil } from '../utils/api-response.util';
 import { z } from 'zod';
 
 const prisma = new PrismaClient();
@@ -199,7 +199,7 @@ export class HospitalizacionesController {
         };
       });
 
-      successResponse(res, 200, 'Hospitalizaciones obtenidas correctamente', {
+      ApiResponseUtil.success(res, 200, 'Hospitalizaciones obtenidas correctamente', {
         hospitalizaciones: hospitalizacionesConDias,
         pagination: {
           page: pageNum,
@@ -210,7 +210,7 @@ export class HospitalizacionesController {
       });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.listar:', error);
-      errorResponse(res, 500, 'Error al obtener hospitalizaciones', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al obtener hospitalizaciones', error.message);
     }
   }
 
@@ -282,7 +282,7 @@ export class HospitalizacionesController {
       });
 
       if (!hospitalizacion) {
-        errorResponse(res, 404, 'Hospitalización no encontrada');
+        ApiResponseUtil.error(res, 404, 'Hospitalización no encontrada');
         return;
       }
 
@@ -296,7 +296,7 @@ export class HospitalizacionesController {
         );
       }
 
-      successResponse(res, 200, 'Hospitalización obtenida correctamente', {
+      ApiResponseUtil.success(res, 200, 'Hospitalización obtenida correctamente', {
         hospitalizacion: {
           ...hospitalizacion,
           dias_hospitalizado,
@@ -304,7 +304,7 @@ export class HospitalizacionesController {
       });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.obtener:', error);
-      errorResponse(res, 500, 'Error al obtener hospitalización', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al obtener hospitalización', error.message);
     }
   }
 
@@ -322,7 +322,7 @@ export class HospitalizacionesController {
       });
 
       if (!paciente) {
-        errorResponse(res, 404, 'Paciente no encontrado');
+        ApiResponseUtil.error(res, 404, 'Paciente no encontrado');
         return;
       }
 
@@ -335,7 +335,7 @@ export class HospitalizacionesController {
       });
 
       if (hospitalizacionActiva) {
-        errorResponse(
+        ApiResponseUtil.error(
           res,
           400,
           'El paciente ya tiene una hospitalización activa',
@@ -351,12 +351,12 @@ export class HospitalizacionesController {
         });
 
         if (!box) {
-          errorResponse(res, 404, 'Box no encontrado');
+          ApiResponseUtil.error(res, 404, 'Box no encontrado');
           return;
         }
 
         if (!box.disponible) {
-          errorResponse(res, 400, 'El box no está disponible');
+          ApiResponseUtil.error(res, 400, 'El box no está disponible');
           return;
         }
       }
@@ -402,16 +402,16 @@ export class HospitalizacionesController {
         });
       }
 
-      successResponse(res, 201, 'Hospitalización creada exitosamente', {
+      ApiResponseUtil.success(res, 201, 'Hospitalización creada exitosamente', {
         hospitalizacion,
       });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.crear:', error);
       if (error instanceof z.ZodError) {
-        errorResponse(res, 400, 'Datos inválidos', error.errors);
+        ApiResponseUtil.error(res, 400, 'Datos inválidos', error.errors);
         return;
       }
-      errorResponse(res, 500, 'Error al crear hospitalización', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al crear hospitalización', error.message);
     }
   }
 
@@ -428,12 +428,12 @@ export class HospitalizacionesController {
       });
 
       if (!hospitalizacionExistente) {
-        errorResponse(res, 404, 'Hospitalización no encontrada');
+        ApiResponseUtil.error(res, 404, 'Hospitalización no encontrada');
         return;
       }
 
       if (hospitalizacionExistente.estado !== 'ACTIVA') {
-        errorResponse(res, 400, 'No se puede actualizar una hospitalización no activa');
+        ApiResponseUtil.error(res, 400, 'No se puede actualizar una hospitalización no activa');
         return;
       }
 
@@ -444,12 +444,12 @@ export class HospitalizacionesController {
         });
 
         if (!box) {
-          errorResponse(res, 404, 'Box no encontrado');
+          ApiResponseUtil.error(res, 404, 'Box no encontrado');
           return;
         }
 
         if (!box.disponible) {
-          errorResponse(res, 400, 'El box no está disponible');
+          ApiResponseUtil.error(res, 400, 'El box no está disponible');
           return;
         }
 
@@ -496,16 +496,16 @@ export class HospitalizacionesController {
         },
       });
 
-      successResponse(res, 200, 'Hospitalización actualizada exitosamente', {
+      ApiResponseUtil.success(res, 200, 'Hospitalización actualizada exitosamente', {
         hospitalizacion,
       });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.actualizar:', error);
       if (error instanceof z.ZodError) {
-        errorResponse(res, 400, 'Datos inválidos', error.errors);
+        ApiResponseUtil.error(res, 400, 'Datos inválidos', error.errors);
         return;
       }
-      errorResponse(res, 500, 'Error al actualizar hospitalización', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al actualizar hospitalización', error.message);
     }
   }
 
@@ -522,12 +522,12 @@ export class HospitalizacionesController {
       });
 
       if (!hospitalizacionExistente) {
-        errorResponse(res, 404, 'Hospitalización no encontrada');
+        ApiResponseUtil.error(res, 404, 'Hospitalización no encontrada');
         return;
       }
 
       if (hospitalizacionExistente.estado !== 'ACTIVA') {
-        errorResponse(res, 400, 'La hospitalización ya no está activa');
+        ApiResponseUtil.error(res, 400, 'La hospitalización ya no está activa');
         return;
       }
 
@@ -581,16 +581,16 @@ export class HospitalizacionesController {
         });
       }
 
-      successResponse(res, 200, 'Hospitalización dada de alta exitosamente', {
+      ApiResponseUtil.success(res, 200, 'Hospitalización dada de alta exitosamente', {
         hospitalizacion,
       });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.darAlta:', error);
       if (error instanceof z.ZodError) {
-        errorResponse(res, 400, 'Datos inválidos', error.errors);
+        ApiResponseUtil.error(res, 400, 'Datos inválidos', error.errors);
         return;
       }
-      errorResponse(res, 500, 'Error al dar de alta hospitalización', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al dar de alta hospitalización', error.message);
     }
   }
 
@@ -606,12 +606,12 @@ export class HospitalizacionesController {
       });
 
       if (!hospitalizacion) {
-        errorResponse(res, 404, 'Hospitalización no encontrada');
+        ApiResponseUtil.error(res, 404, 'Hospitalización no encontrada');
         return;
       }
 
       if (hospitalizacion.estado === 'ACTIVA') {
-        errorResponse(
+        ApiResponseUtil.error(
           res,
           400,
           'No se puede eliminar una hospitalización activa. Debe darla de alta primero.'
@@ -623,10 +623,10 @@ export class HospitalizacionesController {
         where: { id: Number(id) },
       });
 
-      successResponse(res, 200, 'Hospitalización eliminada exitosamente');
+      ApiResponseUtil.success(res, 200, 'Hospitalización eliminada exitosamente');
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.eliminar:', error);
-      errorResponse(res, 500, 'Error al eliminar hospitalización', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al eliminar hospitalización', error.message);
     }
   }
 
@@ -643,12 +643,12 @@ export class HospitalizacionesController {
       });
 
       if (!hospitalizacion) {
-        errorResponse(res, 404, 'Hospitalización no encontrada');
+        ApiResponseUtil.error(res, 404, 'Hospitalización no encontrada');
         return;
       }
 
       if (hospitalizacion.estado !== 'ACTIVA') {
-        errorResponse(res, 400, 'No se puede agregar evolución a una hospitalización no activa');
+        ApiResponseUtil.error(res, 400, 'No se puede agregar evolución a una hospitalización no activa');
         return;
       }
 
@@ -663,14 +663,14 @@ export class HospitalizacionesController {
         },
       });
 
-      successResponse(res, 201, 'Evolución agregada exitosamente', { evolucion });
+      ApiResponseUtil.success(res, 201, 'Evolución agregada exitosamente', { evolucion });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.agregarEvolucion:', error);
       if (error instanceof z.ZodError) {
-        errorResponse(res, 400, 'Datos inválidos', error.errors);
+        ApiResponseUtil.error(res, 400, 'Datos inválidos', error.errors);
         return;
       }
-      errorResponse(res, 500, 'Error al agregar evolución', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al agregar evolución', error.message);
     }
   }
 
@@ -686,7 +686,7 @@ export class HospitalizacionesController {
       });
 
       if (!hospitalizacion) {
-        errorResponse(res, 404, 'Hospitalización no encontrada');
+        ApiResponseUtil.error(res, 404, 'Hospitalización no encontrada');
         return;
       }
 
@@ -695,10 +695,10 @@ export class HospitalizacionesController {
         orderBy: { fecha_registro: 'desc' },
       });
 
-      successResponse(res, 200, 'Evoluciones obtenidas correctamente', { evoluciones });
+      ApiResponseUtil.success(res, 200, 'Evoluciones obtenidas correctamente', { evoluciones });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.listarEvoluciones:', error);
-      errorResponse(res, 500, 'Error al obtener evoluciones', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al obtener evoluciones', error.message);
     }
   }
 
@@ -717,7 +717,7 @@ export class HospitalizacionesController {
       });
 
       if (!evolucion) {
-        errorResponse(res, 404, 'Evolución no encontrada');
+        ApiResponseUtil.error(res, 404, 'Evolución no encontrada');
         return;
       }
 
@@ -725,10 +725,10 @@ export class HospitalizacionesController {
         where: { id: Number(evolucionId) },
       });
 
-      successResponse(res, 200, 'Evolución eliminada exitosamente');
+      ApiResponseUtil.success(res, 200, 'Evolución eliminada exitosamente');
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.eliminarEvolucion:', error);
-      errorResponse(res, 500, 'Error al eliminar evolución', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al eliminar evolución', error.message);
     }
   }
 
@@ -745,12 +745,12 @@ export class HospitalizacionesController {
       });
 
       if (!hospitalizacion) {
-        errorResponse(res, 404, 'Hospitalización no encontrada');
+        ApiResponseUtil.error(res, 404, 'Hospitalización no encontrada');
         return;
       }
 
       if (hospitalizacion.estado !== 'ACTIVA') {
-        errorResponse(
+        ApiResponseUtil.error(
           res,
           400,
           'No se pueden agregar signos vitales a una hospitalización no activa'
@@ -773,14 +773,14 @@ export class HospitalizacionesController {
         },
       });
 
-      successResponse(res, 201, 'Signos vitales agregados exitosamente', { signosVitales });
+      ApiResponseUtil.success(res, 201, 'Signos vitales agregados exitosamente', { signosVitales });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.agregarSignosVitales:', error);
       if (error instanceof z.ZodError) {
-        errorResponse(res, 400, 'Datos inválidos', error.errors);
+        ApiResponseUtil.error(res, 400, 'Datos inválidos', error.errors);
         return;
       }
-      errorResponse(res, 500, 'Error al agregar signos vitales', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al agregar signos vitales', error.message);
     }
   }
 
@@ -796,7 +796,7 @@ export class HospitalizacionesController {
       });
 
       if (!hospitalizacion) {
-        errorResponse(res, 404, 'Hospitalización no encontrada');
+        ApiResponseUtil.error(res, 404, 'Hospitalización no encontrada');
         return;
       }
 
@@ -805,10 +805,10 @@ export class HospitalizacionesController {
         orderBy: { fecha_registro: 'desc' },
       });
 
-      successResponse(res, 200, 'Signos vitales obtenidos correctamente', { signosVitales });
+      ApiResponseUtil.success(res, 200, 'Signos vitales obtenidos correctamente', { signosVitales });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.listarSignosVitales:', error);
-      errorResponse(res, 500, 'Error al obtener signos vitales', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al obtener signos vitales', error.message);
     }
   }
 
@@ -827,7 +827,7 @@ export class HospitalizacionesController {
       });
 
       if (!signos) {
-        errorResponse(res, 404, 'Registro de signos vitales no encontrado');
+        ApiResponseUtil.error(res, 404, 'Registro de signos vitales no encontrado');
         return;
       }
 
@@ -835,10 +835,10 @@ export class HospitalizacionesController {
         where: { id: Number(signosId) },
       });
 
-      successResponse(res, 200, 'Registro de signos vitales eliminado exitosamente');
+      ApiResponseUtil.success(res, 200, 'Registro de signos vitales eliminado exitosamente');
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.eliminarSignosVitales:', error);
-      errorResponse(res, 500, 'Error al eliminar signos vitales', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al eliminar signos vitales', error.message);
     }
   }
 
@@ -855,12 +855,12 @@ export class HospitalizacionesController {
       });
 
       if (!hospitalizacion) {
-        errorResponse(res, 404, 'Hospitalización no encontrada');
+        ApiResponseUtil.error(res, 404, 'Hospitalización no encontrada');
         return;
       }
 
       if (hospitalizacion.estado !== 'ACTIVA') {
-        errorResponse(res, 400, 'No se puede agregar tratamiento a una hospitalización no activa');
+        ApiResponseUtil.error(res, 400, 'No se puede agregar tratamiento a una hospitalización no activa');
         return;
       }
 
@@ -881,14 +881,14 @@ export class HospitalizacionesController {
         },
       });
 
-      successResponse(res, 201, 'Tratamiento agregado exitosamente', { tratamiento });
+      ApiResponseUtil.success(res, 201, 'Tratamiento agregado exitosamente', { tratamiento });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.agregarTratamiento:', error);
       if (error instanceof z.ZodError) {
-        errorResponse(res, 400, 'Datos inválidos', error.errors);
+        ApiResponseUtil.error(res, 400, 'Datos inválidos', error.errors);
         return;
       }
-      errorResponse(res, 500, 'Error al agregar tratamiento', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al agregar tratamiento', error.message);
     }
   }
 
@@ -905,7 +905,7 @@ export class HospitalizacionesController {
       });
 
       if (!hospitalizacion) {
-        errorResponse(res, 404, 'Hospitalización no encontrada');
+        ApiResponseUtil.error(res, 404, 'Hospitalización no encontrada');
         return;
       }
 
@@ -927,10 +927,10 @@ export class HospitalizacionesController {
         orderBy: { fecha_inicio: 'desc' },
       });
 
-      successResponse(res, 200, 'Tratamientos obtenidos correctamente', { tratamientos });
+      ApiResponseUtil.success(res, 200, 'Tratamientos obtenidos correctamente', { tratamientos });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.listarTratamientos:', error);
-      errorResponse(res, 500, 'Error al obtener tratamientos', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al obtener tratamientos', error.message);
     }
   }
 
@@ -950,7 +950,7 @@ export class HospitalizacionesController {
       });
 
       if (!tratamiento) {
-        errorResponse(res, 404, 'Tratamiento no encontrado');
+        ApiResponseUtil.error(res, 404, 'Tratamiento no encontrado');
         return;
       }
 
@@ -980,16 +980,16 @@ export class HospitalizacionesController {
         data: updateData,
       });
 
-      successResponse(res, 200, 'Tratamiento actualizado exitosamente', {
+      ApiResponseUtil.success(res, 200, 'Tratamiento actualizado exitosamente', {
         tratamiento: tratamientoActualizado,
       });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.actualizarTratamiento:', error);
       if (error instanceof z.ZodError) {
-        errorResponse(res, 400, 'Datos inválidos', error.errors);
+        ApiResponseUtil.error(res, 400, 'Datos inválidos', error.errors);
         return;
       }
-      errorResponse(res, 500, 'Error al actualizar tratamiento', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al actualizar tratamiento', error.message);
     }
   }
 
@@ -1008,7 +1008,7 @@ export class HospitalizacionesController {
       });
 
       if (!tratamiento) {
-        errorResponse(res, 404, 'Tratamiento no encontrado');
+        ApiResponseUtil.error(res, 404, 'Tratamiento no encontrado');
         return;
       }
 
@@ -1016,10 +1016,10 @@ export class HospitalizacionesController {
         where: { id: Number(tratamientoId) },
       });
 
-      successResponse(res, 200, 'Tratamiento eliminado exitosamente');
+      ApiResponseUtil.success(res, 200, 'Tratamiento eliminado exitosamente');
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.eliminarTratamiento:', error);
-      errorResponse(res, 500, 'Error al eliminar tratamiento', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al eliminar tratamiento', error.message);
     }
   }
 
@@ -1037,12 +1037,12 @@ export class HospitalizacionesController {
       });
 
       if (!hospitalizacion) {
-        errorResponse(res, 404, 'Hospitalización no encontrada');
+        ApiResponseUtil.error(res, 404, 'Hospitalización no encontrada');
         return;
       }
 
       if (hospitalizacion.estado === 'ACTIVA') {
-        errorResponse(
+        ApiResponseUtil.error(
           res,
           400,
           'No se puede crear epicrisis de una hospitalización activa. Debe darla de alta primero.'
@@ -1068,7 +1068,7 @@ export class HospitalizacionesController {
         });
       }
 
-      successResponse(
+      ApiResponseUtil.success(
         res,
         hospitalizacion.epicrisis ? 200 : 201,
         hospitalizacion.epicrisis ? 'Epicrisis actualizada exitosamente' : 'Epicrisis creada exitosamente',
@@ -1077,10 +1077,10 @@ export class HospitalizacionesController {
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.guardarEpicrisis:', error);
       if (error instanceof z.ZodError) {
-        errorResponse(res, 400, 'Datos inválidos', error.errors);
+        ApiResponseUtil.error(res, 400, 'Datos inválidos', error.errors);
         return;
       }
-      errorResponse(res, 500, 'Error al guardar epicrisis', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al guardar epicrisis', error.message);
     }
   }
 
@@ -1116,14 +1116,14 @@ export class HospitalizacionesController {
       });
 
       if (!epicrisis) {
-        errorResponse(res, 404, 'Epicrisis no encontrada');
+        ApiResponseUtil.error(res, 404, 'Epicrisis no encontrada');
         return;
       }
 
-      successResponse(res, 200, 'Epicrisis obtenida correctamente', { epicrisis });
+      ApiResponseUtil.success(res, 200, 'Epicrisis obtenida correctamente', { epicrisis });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.obtenerEpicrisis:', error);
-      errorResponse(res, 500, 'Error al obtener epicrisis', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al obtener epicrisis', error.message);
     }
   }
 
@@ -1159,12 +1159,12 @@ export class HospitalizacionesController {
         orderBy: { fecha_ingreso: 'desc' },
       });
 
-      successResponse(res, 200, 'Historial de hospitalizaciones obtenido correctamente', {
+      ApiResponseUtil.success(res, 200, 'Historial de hospitalizaciones obtenido correctamente', {
         hospitalizaciones,
       });
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.historialPaciente:', error);
-      errorResponse(res, 500, 'Error al obtener historial de hospitalizaciones', error.message);
+      ApiResponseUtil.error(res, 500, 'Error al obtener historial de hospitalizaciones', error.message);
     }
   }
 }
