@@ -268,7 +268,6 @@ export class CirugiasController {
                 select: {
                   id: true,
                   nombre: true,
-                  sku_interno: true,
                   categoria: true,
                 },
               },
@@ -593,12 +592,8 @@ export class CirugiasController {
           temperatura: validatedData.temperatura,
           frecuencia_cardiaca: validatedData.frecuencia_cardiaca,
           frecuencia_respiratoria: validatedData.frecuencia_respiratoria,
-          presion_arterial_sistolica: validatedData.presion_arterial_sistolica,
-          presion_arterial_diastolica: validatedData.presion_arterial_diastolica,
+          presion_arterial_media: validatedData.presion_arterial_sistolica ? parseInt(String(validatedData.presion_arterial_sistolica)) : undefined,
           spo2: validatedData.spo2,
-          peso_kg: validatedData.peso_kg,
-          nivel_conciencia: validatedData.nivel_conciencia,
-          nivel_dolor: validatedData.nivel_dolor,
           observaciones: validatedData.observaciones,
         },
       });
@@ -723,7 +718,6 @@ export class CirugiasController {
               select: {
                 id: true,
                 nombre: true,
-                sku: true,
                 categoria: true,
               },
             },
@@ -743,8 +737,9 @@ export class CirugiasController {
             tipo: 'SALIDA_CONSUMO',
             cantidad: validatedData.cantidad,
             fecha_movimiento: new Date(),
-            origen_destino: `Cirugía #${id}`,
+            origen: `Cirugía #${id}`,
             observaciones: validatedData.observaciones || 'Consumo en cirugía',
+            usuario_id: 1, // TODO: get from authenticated user
           },
         }),
       ]);

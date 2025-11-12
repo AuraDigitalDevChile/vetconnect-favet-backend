@@ -634,7 +634,7 @@ export class FacturacionController {
         descuento: Number(factura.descuento),
         iva: Number(factura.iva),
         total: Number(factura.total),
-        observaciones: factura.observaciones,
+        observaciones: factura.observaciones || undefined,
       };
 
       const html = generarBoletaHTML(boletaData);

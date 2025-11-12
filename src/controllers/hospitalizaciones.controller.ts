@@ -134,13 +134,6 @@ export class HospitalizacionesController {
                 numero_ficha: true,
               },
             },
-            tutor: {
-              select: {
-                id: true,
-                nombre_completo: true,
-                telefono: true,
-              },
-            },
             veterinario: {
               select: {
                 id: true,
@@ -249,7 +242,6 @@ export class HospitalizacionesController {
             select: {
               id: true,
               nombre_completo: true,
-              especialidad: true,
             },
           },
           box: {

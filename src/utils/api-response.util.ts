@@ -26,7 +26,7 @@ export class ApiResponseUtil {
   /**
    * Respuesta exitosa (envía response)
    */
-  static success<T>(res: Response, statusCode: number, message: string, data: T): void;
+  static success<T>(res: Response, statusCode: number, message: string, data: T): Response;
   /**
    * Implementación
    */
@@ -35,7 +35,7 @@ export class ApiResponseUtil {
     messageOrStatusCode?: string | number,
     metaOrMessage?: ApiResponse['meta'] | string,
     dataIfRes?: T
-  ): ApiResponse<T> | void {
+  ): ApiResponse<T> | Response {
     // Si el primer parámetro es Response (tiene método .json)
     if (typeof (dataOrRes as any).json === 'function') {
       const res = dataOrRes as Response;
@@ -66,7 +66,7 @@ export class ApiResponseUtil {
   /**
    * Respuesta de error (envía response)
    */
-  static error(res: Response, statusCode: number, message: string, details?: any): void;
+  static error(res: Response, statusCode: number, message: string, details?: any): Response;
   /**
    * Implementación
    */
@@ -75,7 +75,7 @@ export class ApiResponseUtil {
     detailsOrStatusCode?: any | number,
     messageIfRes?: string,
     detailsIfRes?: any
-  ): ApiResponse | void {
+  ): ApiResponse | Response {
     // Si el primer parámetro es Response
     if (typeof (messageOrRes as any).json === 'function') {
       const res = messageOrRes as Response;
