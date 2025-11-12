@@ -735,7 +735,7 @@ async function main() {
         descripcion: 'Esterilización Canino (Castración)',
         cantidad: 1,
         precio_unitario: 65000,
-        descuento: 9750,
+        descuento: 15.00, // 15% de descuento
         subtotal: 55250,
       },
       {
@@ -744,7 +744,7 @@ async function main() {
         descripcion: 'Examen Pre-Quirúrgico Completo',
         cantidad: 1,
         precio_unitario: 12000,
-        descuento: 1800,
+        descuento: 15.00, // 15% de descuento
         subtotal: 10200,
       },
       {
@@ -753,7 +753,7 @@ async function main() {
         descripcion: 'Kit Post-Quirúrgico (Analgésicos + Antibióticos)',
         cantidad: 1,
         precio_unitario: 8000,
-        descuento: 1200,
+        descuento: 15.00, // 15% de descuento
         subtotal: 6800,
       },
     ],

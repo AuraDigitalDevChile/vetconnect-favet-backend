@@ -15,6 +15,7 @@ import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.routes';
 import pacientesRoutes from './routes/pacientes.routes';
 import tutoresRoutes from './routes/tutores.routes';
+import usuariosRoutes from './routes/usuarios.routes';
 import citasRoutes from './routes/citas.routes';
 import fichasRoutes from './routes/fichas.routes';
 import hospitalizacionRoutes from './routes/hospitalizacion.routes';
@@ -88,6 +89,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacientesRoutes);
 app.use('/api/tutores', tutoresRoutes);
+app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/citas', citasRoutes);
 app.use('/api/fichas-clinicas', fichasRoutes);
 app.use('/api/hospitalizacion', hospitalizacionRoutes);
