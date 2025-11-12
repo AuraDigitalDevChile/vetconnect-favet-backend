@@ -204,7 +204,6 @@ export class CitasController {
           ficha_clinica: {
             select: {
               id: true,
-              numero_ficha_clinica: true,
               diagnostico: true,
               estado: true,
               created_at: true,
@@ -235,7 +234,7 @@ export class CitasController {
       const validacion = citaSchema.safeParse(req.body);
 
       if (!validacion.success) {
-        ApiResponseUtils.validationError(res, validacion.error.errors);
+        ApiResponseUtils.validationError(res, validacion.error.errors[0].message);
         return;
       }
 
@@ -341,7 +340,7 @@ export class CitasController {
         },
       });
 
-      ApiResponseUtils.success(res, cita, 'Cita creada exitosamente', 201);
+      ApiResponseUtils.created(res, cita, 'Cita creada exitosamente');
     } catch (error: any) {
       console.error('Error al crear cita:', error);
       ApiResponseUtils.serverError(res, 'Error al crear cita');
@@ -379,7 +378,7 @@ export class CitasController {
       const validacion = citaUpdateSchema.safeParse(req.body);
 
       if (!validacion.success) {
-        ApiResponseUtils.validationError(res, validacion.error.errors);
+        ApiResponseUtils.validationError(res, validacion.error.errors[0].message);
         return;
       }
 
@@ -592,7 +591,7 @@ export class CitasController {
       const validacion = estadoCitaSchema.safeParse(req.body);
 
       if (!validacion.success) {
-        ApiResponseUtils.validationError(res, validacion.error.errors);
+        ApiResponseUtils.validationError(res, validacion.error.errors[0].message);
         return;
       }
 
@@ -829,7 +828,6 @@ export class CitasController {
           ficha_clinica: {
             select: {
               id: true,
-              numero_ficha_clinica: true,
               diagnostico: true,
             },
           },

@@ -75,7 +75,7 @@ app.use('/api/', limiter);
 // ==========================================
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({
     status: 'OK',
     message: 'VetConnect FAVET API is running',

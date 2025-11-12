@@ -7,7 +7,6 @@ import { z } from 'zod';
 import prisma from '../config/database';
 import { AuthUtils } from '../utils/auth.utils';
 import { ApiResponseUtils } from '../utils/api-response.utils';
-import { AppError } from '../middleware/error.middleware';
 
 // Esquema de validación
 const loginSchema = z.object({

@@ -22,7 +22,7 @@ export class ApiResponseUtils {
    * Respuesta exitosa
    */
   static success<T>(res: Response, data: T, message?: string, meta?: ApiResponse['meta']) {
-    return res.json<ApiResponse<T>>({
+    return res.json({
       success: true,
       data,
       message,
@@ -34,7 +34,7 @@ export class ApiResponseUtils {
    * Respuesta de error
    */
   static error(res: Response, message: string, statusCode: number = 400) {
-    return res.status(statusCode).json<ApiResponse>({
+    return res.status(statusCode).json({
       success: false,
       error: message,
     });
@@ -86,7 +86,7 @@ export class ApiResponseUtils {
    * Creado exitosamente
    */
   static created<T>(res: Response, data: T, message?: string) {
-    return res.status(201).json<ApiResponse<T>>({
+    return res.status(201).json({
       success: true,
       data,
       message: message || 'Creado exitosamente',

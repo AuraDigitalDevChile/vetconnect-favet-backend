@@ -17,16 +17,18 @@ const crearPacienteSchema = z.object({
   especie: z.enum(['CANINO', 'FELINO', 'EXOTICO', 'EQUINO', 'BOVINO', 'OTRO']),
   raza: z.string().optional(),
   fecha_nacimiento: z.string().optional(),
+  edad_estimada_anios: z.number().int().optional(),
+  edad_estimada_meses: z.number().int().optional(),
   sexo: z.enum(['MACHO', 'HEMBRA']),
-  estado_reproductivo: z.enum(['ENTERO', 'CASTRADO', 'ESTERILIZADO']).optional(),
+  estado_reproductivo: z.enum(['ENTERO', 'CASTRADO', 'ESTERILIZADO']),
   tamanio: z.enum(['PEQUENO', 'MEDIANO', 'GRANDE', 'GIGANTE']).optional(),
   caracter: z.enum(['DOCIL', 'NERVIOSO', 'AGRESIVO', 'MIEDOSO']).optional(),
-  numero_chip: z.string().optional(),
-  peso_actual: z.number().positive().optional(),
+  chip: z.string().optional(),
+  peso_kg: z.number().positive().optional(),
+  color: z.string().optional(),
   habitat: z.string().optional(),
   tipo_alimentacion: z.string().optional(),
-  alergias: z.string().optional(),
-  observaciones: z.string().optional(),
+  notas: z.string().optional(),
   foto_url: z.string().url().optional(),
   centro_id: z.number().int().positive(),
   tutor_id: z.number().int().positive(),
@@ -119,15 +121,15 @@ export class PacientesController {
         include: {
           tutor: true,
           centro: true,
-          registros_peso: {
-            orderBy: { fecha: 'desc' },
+          pesos: {
+            orderBy: { fecha_registro: 'desc' },
             take: 10,
           },
           vacunas: {
             orderBy: { fecha_aplicacion: 'desc' },
           },
           fichas_clinicas: {
-            orderBy: { fecha_atencion: 'desc' },
+            orderBy: { fecha_consulta: 'desc' },
             take: 5,
             include: {
               veterinario: {
@@ -191,10 +193,17 @@ export class PacientesController {
       // Generar número de ficha único consecutivo por centro
       const ultimoPaciente = await prisma.paciente.findFirst({
         where: { centro_id: data.centro_id },
-        orderBy: { numero_ficha: 'desc' },
+        orderBy: { created_at: 'desc' },
       });
 
-      const numeroFicha = ultimoPaciente ? ultimoPaciente.numero_ficha + 1 : 1;
+      // Extraer el número más alto de numero_ficha y generar el siguiente
+      let numeroFicha: string;
+      if (ultimoPaciente && ultimoPaciente.numero_ficha) {
+        const ultimoNumero = parseInt(ultimoPaciente.numero_ficha) || 0;
+        numeroFicha = (ultimoNumero + 1).toString().padStart(6, '0');
+      } else {
+        numeroFicha = '000001';
+      }
 
       // Crear paciente
       const paciente = await prisma.paciente.create({
@@ -209,12 +218,12 @@ export class PacientesController {
       });
 
       // Si se proporciona peso, crear registro inicial
-      if (data.peso_actual) {
-        await prisma.registro_peso.create({
+      if (data.peso_kg) {
+        await prisma.registroPeso.create({
           data: {
             paciente_id: paciente.id,
-            peso: data.peso_actual,
-            fecha: new Date(),
+            peso_kg: data.peso_kg,
+            fecha_registro: new Date(),
             observaciones: 'Peso inicial al crear paciente',
           },
         });
@@ -271,12 +280,12 @@ export class PacientesController {
       });
 
       // Si se actualizó el peso, crear registro
-      if (data.peso_actual && data.peso_actual !== pacienteExistente.peso_actual) {
-        await prisma.registro_peso.create({
+      if (data.peso_kg && (!pacienteExistente.peso_kg || data.peso_kg !== Number(pacienteExistente.peso_kg))) {
+        await prisma.registroPeso.create({
           data: {
             paciente_id: paciente.id,
-            peso: data.peso_actual,
-            fecha: new Date(),
+            peso_kg: data.peso_kg,
+            fecha_registro: new Date(),
             observaciones: 'Actualización de peso',
           },
         });
@@ -328,7 +337,7 @@ export class PacientesController {
   static async marcarFallecido(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { fecha_fallecimiento, causa_fallecimiento } = req.body;
+      const { fecha_fallecimiento } = req.body;
 
       // Verificar que existe
       const paciente = await prisma.paciente.findUnique({
@@ -351,7 +360,6 @@ export class PacientesController {
         data: {
           fallecido: true,
           fecha_fallecimiento: fecha_fallecimiento ? new Date(fecha_fallecimiento) : new Date(),
-          causa_fallecimiento,
           activo: false, // También desactivar
         },
       });
@@ -360,7 +368,7 @@ export class PacientesController {
       await prisma.cita.updateMany({
         where: {
           paciente_id: parseInt(id),
-          fecha_hora: { gte: new Date() },
+          fecha: { gte: new Date() },
           estado: { notIn: ['CANCELADA', 'COMPLETADA'] },
         },
         data: {
@@ -396,8 +404,8 @@ export class PacientesController {
       const where: any = {
         OR: [
           { nombre: { contains: query, mode: 'insensitive' } },
-          { numero_chip: { contains: query, mode: 'insensitive' } },
-          { numero_ficha: isNaN(parseInt(query)) ? undefined : parseInt(query) },
+          { chip: { contains: query, mode: 'insensitive' } },
+          { numero_ficha: { contains: query, mode: 'insensitive' } },
         ].filter((condition) => condition !== undefined),
       };
 
@@ -454,14 +462,14 @@ export class PacientesController {
       // Obtener todo el historial
       const [fichasClinicas, hospitalizaciones, cirugias, vacunas, registrosPeso] =
         await Promise.all([
-          prisma.ficha_clinica.findMany({
+          prisma.fichaClinica.findMany({
             where: { paciente_id: parseInt(id) },
             include: {
               veterinario: {
                 select: { nombre_completo: true },
               },
             },
-            orderBy: { fecha_atencion: 'desc' },
+            orderBy: { fecha_consulta: 'desc' },
           }),
           prisma.hospitalizacion.findMany({
             where: { paciente_id: parseInt(id) },
@@ -485,9 +493,9 @@ export class PacientesController {
             where: { paciente_id: parseInt(id) },
             orderBy: { fecha_aplicacion: 'desc' },
           }),
-          prisma.registro_peso.findMany({
+          prisma.registroPeso.findMany({
             where: { paciente_id: parseInt(id) },
-            orderBy: { fecha: 'desc' },
+            orderBy: { fecha_registro: 'desc' },
           }),
         ]);
 

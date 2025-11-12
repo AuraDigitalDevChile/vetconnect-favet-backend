@@ -23,7 +23,7 @@
  */
 
 import { Request, Response } from 'express';
-import { PrismaClient, EstadoFicha, TipoExamen, EstadoExamen } from '@prisma/client';
+import { PrismaClient, EstadoFicha } from '@prisma/client';
 import { z } from 'zod';
 import { ApiResponseUtils } from '../utils/api-response.utils';
 
@@ -286,7 +286,7 @@ export class FichasController {
       const validacion = fichaClinicaSchema.safeParse(req.body);
 
       if (!validacion.success) {
-        ApiResponseUtils.validationError(res, validacion.error.errors);
+        ApiResponseUtils.validationError(res, validacion.error.errors[0].message);
         return;
       }
 
@@ -380,7 +380,7 @@ export class FichasController {
         });
       }
 
-      ApiResponseUtils.success(res, ficha, 'Ficha clínica creada exitosamente', 201);
+      ApiResponseUtils.created(res, ficha, 'Ficha clínica creada exitosamente');
     } catch (error: any) {
       console.error('Error al crear ficha:', error);
       ApiResponseUtils.serverError(res, 'Error al crear ficha clínica');
@@ -415,7 +415,7 @@ export class FichasController {
       const validacion = fichaUpdateSchema.safeParse(req.body);
 
       if (!validacion.success) {
-        ApiResponseUtils.validationError(res, validacion.error.errors);
+        ApiResponseUtils.validationError(res, validacion.error.errors[0].message);
         return;
       }
 
@@ -617,7 +617,7 @@ export class FichasController {
       const validacion = recetaSchema.safeParse(req.body);
 
       if (!validacion.success) {
-        ApiResponseUtils.validationError(res, validacion.error.errors);
+        ApiResponseUtils.validationError(res, validacion.error.errors[0].message);
         return;
       }
 
@@ -631,7 +631,7 @@ export class FichasController {
         },
       });
 
-      ApiResponseUtils.success(res, receta, 'Receta agregada exitosamente', 201);
+      ApiResponseUtils.created(res, receta, 'Receta agregada exitosamente');
     } catch (error: any) {
       console.error('Error al agregar receta:', error);
       ApiResponseUtils.serverError(res, 'Error al agregar receta');
@@ -712,7 +712,7 @@ export class FichasController {
       const validacion = examenSchema.safeParse(req.body);
 
       if (!validacion.success) {
-        ApiResponseUtils.validationError(res, validacion.error.errors);
+        ApiResponseUtils.validationError(res, validacion.error.errors[0].message);
         return;
       }
 
@@ -734,7 +734,7 @@ export class FichasController {
         },
       });
 
-      ApiResponseUtils.success(res, examen, 'Examen agregado exitosamente', 201);
+      ApiResponseUtils.created(res, examen, 'Examen agregado exitosamente');
     } catch (error: any) {
       console.error('Error al agregar examen:', error);
       ApiResponseUtils.serverError(res, 'Error al agregar examen');
@@ -793,7 +793,7 @@ export class FichasController {
       const validacion = examenUpdateSchema.safeParse(req.body);
 
       if (!validacion.success) {
-        ApiResponseUtils.validationError(res, validacion.error.errors);
+        ApiResponseUtils.validationError(res, validacion.error.errors[0].message);
         return;
       }
 
