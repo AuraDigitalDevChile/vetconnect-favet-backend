@@ -2,12 +2,12 @@
  * Utilidades de Autenticación JWT
  */
 
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { RolUsuario } from '@prisma/client';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'tu-secreto-super-seguro-de-al-menos-32-caracteres';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_SECRET: string = process.env.JWT_SECRET || 'tu-secreto-super-seguro-de-al-menos-32-caracteres';
+const JWT_EXPIRES_IN: string = process.env.JWT_EXPIRES_IN || '7d';
 
 export interface JwtPayload {
   userId: number;
@@ -21,9 +21,8 @@ export class AuthUtils {
    * Generar token JWT
    */
   static generateToken(payload: JwtPayload): string {
-    return jwt.sign(payload, JWT_SECRET, {
-      expiresIn: JWT_EXPIRES_IN,
-    });
+    const options: SignOptions = { expiresIn: JWT_EXPIRES_IN as any };
+    return jwt.sign(payload, JWT_SECRET, options);
   }
 
   /**
