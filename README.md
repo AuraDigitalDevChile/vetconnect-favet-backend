@@ -1,6 +1,10 @@
-# VetConnect FAVET - Backend API
+# VetConnect FAVET - Backend API REST
 
 Backend API REST para el sistema de gestión clínica veterinaria VetConnect FAVET - Universidad de Chile.
+
+**Repositorio:** https://github.com/AuraDigitalDevChile/vetconnect-favet-backend
+
+---
 
 ## 📋 Tabla de Contenidos
 
@@ -18,10 +22,11 @@ Backend API REST para el sistema de gestión clínica veterinaria VetConnect FAV
 
 ## 🛠 Tecnologías
 
-- **Next.js 14** - Framework React con App Router
+- **Node.js** - Runtime de JavaScript
+- **Express.js** - Framework web para Node.js
 - **TypeScript** - Tipado estático
 - **Prisma ORM** - ORM para PostgreSQL
-- **PostgreSQL** - Base de datos relacional
+- **PostgreSQL (Neon)** - Base de datos relacional en la nube
 - **JWT** - Autenticación basada en tokens
 - **Zod** - Validación de esquemas
 - **bcryptjs** - Hash de contraseñas
@@ -42,7 +47,7 @@ Backend API REST para el sistema de gestión clínica veterinaria VetConnect FAV
 ### 1. Clonar el repositorio
 
 ```bash
-git clone <URL_DEL_REPOSITORIO>
+git clone https://github.com/AuraDigitalDevChile/vetconnect-favet-backend.git
 cd vetconnect-favet-backend
 ```
 
@@ -60,20 +65,19 @@ cp .env.example .env
 
 Editar `.env` y configurar las variables necesarias (ver sección [Configuración](#configuración)).
 
-### 4. Configurar base de datos
+### 4. Generar cliente de Prisma
 
 ```bash
-# Generar el cliente de Prisma
 npm run prisma:generate
+```
 
-# Ejecutar migraciones
-npm run prisma:migrate
+### 5. (Opcional) Cargar datos de prueba
 
-# (Opcional) Cargar datos de prueba
+```bash
 npm run db:seed
 ```
 
-### 5. Iniciar servidor de desarrollo
+### 6. Iniciar servidor de desarrollo
 
 ```bash
 npm run dev
@@ -90,37 +94,24 @@ El servidor estará disponible en `http://localhost:3000`
 Archivo `.env`:
 
 ```env
-# Base de Datos
-DATABASE_URL="postgresql://usuario:password@hostname:5432/vetconnect_favet"
-DIRECT_URL="postgresql://usuario:password@hostname:5432/vetconnect_favet"
+# Base de Datos (ya configurado con Neon)
+DATABASE_URL="postgresql://neondb_owner:npg_xenQDMO7G9BY@ep-young-water-ahygp2on-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require"
 
-# Next.js
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
+# Servidor
+PORT=3000
 NODE_ENV="development"
 
 # JWT
-JWT_SECRET="tu-secreto-super-seguro-de-al-menos-32-caracteres"
+JWT_SECRET="vetconnect-favet-jwt-secret-key-2025-aura-digital-ultra-seguro-32chars-min"
 JWT_EXPIRES_IN="7d"
 
-# Email (opcional)
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_USER="notificaciones@vetconnect.cl"
-SMTP_PASSWORD="tu-password"
+# CORS
+CORS_ORIGIN="http://localhost:3000,http://localhost:5173"
 
-# Almacenamiento (opcional)
-STORAGE_TYPE="local"
-AWS_ACCESS_KEY_ID="tu-access-key"
-AWS_SECRET_ACCESS_KEY="tu-secret-key"
-AWS_S3_BUCKET="vetconnect-files"
+# Rate Limiting
+RATE_LIMIT_REQUESTS="100"
+RATE_LIMIT_WINDOW_MS="60000"
 ```
-
-### Configuración de Base de Datos con Neon
-
-1. Crear cuenta en [Neon.tech](https://neon.tech)
-2. Crear nuevo proyecto
-3. Copiar la connection string
-4. Pegar en `DATABASE_URL` en el archivo `.env`
 
 ---
 
@@ -129,33 +120,33 @@ AWS_S3_BUCKET="vetconnect-files"
 ```
 vetconnect-favet-backend/
 ├── prisma/
-│   ├── schema.prisma          # Esquema de base de datos
-│   ├── migrations/            # Migraciones
-│   └── seed.ts                # Datos de prueba
+│   ├── schema.prisma          # Esquema de base de datos (45 tablas)
+│   ├── migrations/            # Migraciones aplicadas
+│   └── seed.ts               # (Por crear) Datos de prueba
 ├── src/
-│   ├── app/
-│   │   └── api/               # API Routes
-│   │       ├── auth/          # Autenticación
-│   │       ├── pacientes/     # CRUD Pacientes
-│   │       ├── tutores/       # CRUD Tutores
-│   │       ├── citas/         # CRUD Citas
-│   │       ├── fichas-clinicas/
-│   │       ├── hospitalizacion/
-│   │       ├── cirugias/
-│   │       ├── inventario/
-│   │       └── facturacion/
-│   ├── lib/
-│   │   ├── prisma.ts          # Cliente Prisma
-│   │   ├── auth.ts            # Utilidades JWT
-│   │   └── api-response.ts    # Respuestas estandarizadas
+│   ├── config/
+│   │   └── database.ts        # Cliente Prisma
+│   ├── controllers/
+│   │   └── auth.controller.ts # Controladores
 │   ├── middleware/
-│   │   └── auth-middleware.ts # Middleware de autenticación
-│   ├── types/                 # TypeScript types
-│   ├── utils/                 # Utilidades
-│   └── services/              # Lógica de negocio
+│   │   ├── auth.middleware.ts # Autenticación
+│   │   ├── error.middleware.ts# Manejo de errores
+│   │   └── notFound.middleware.ts
+│   ├── routes/
+│   │   ├── auth.routes.ts     # Rutas de autenticación
+│   │   ├── pacientes.routes.ts# (Por implementar)
+│   │   ├── tutores.routes.ts  # (Por implementar)
+│   │   ├── citas.routes.ts    # (Por implementar)
+│   │   └── ...
+│   ├── services/              # Lógica de negocio (por crear)
+│   ├── utils/
+│   │   ├── auth.utils.ts      # Utilidades JWT
+│   │   └── api-response.utils.ts
+│   └── server.ts              # Servidor Express principal
 ├── package.json
 ├── tsconfig.json
-├── next.config.js
+├── .env.example
+├── .gitignore
 └── README.md
 ```
 
@@ -170,8 +161,8 @@ El sistema cuenta con **45 tablas** organizadas en módulos:
 #### Módulos Principales:
 
 1. **Centros y Usuarios**
-   - `centros` - Centros veterinarios (Bilbao, El Roble, Hospital)
-   - `usuarios` - Staff (admin, veterinarios, recepcionistas)
+   - `centros` - 3 centros (Bilbao, El Roble, Hospital)
+   - `usuarios` - Staff (230 usuarios soportados)
    - `tutores` - Propietarios de mascotas
 
 2. **Pacientes**
@@ -182,12 +173,12 @@ El sistema cuenta con **45 tablas** organizadas en módulos:
 3. **Agenda y Citas**
    - `horarios` - Horarios de atención
    - `ausencias` - Vacaciones y licencias
-   - `citas` - Agendamiento de consultas
+   - `citas` - Agendamiento
    - `boxes` - Boxes/Caniles/Pabellones
 
 4. **Atención Clínica**
    - `fichas_clinicas` - Fichas de consulta
-   - `examenes` - Exámenes solicitados/realizados
+   - `examenes` - Exámenes solicitados
    - `recetas` - Recetas médicas
 
 5. **Hospitalización**
@@ -204,7 +195,7 @@ El sistema cuenta con **45 tablas** organizadas en módulos:
 
 7. **Convenios**
    - `convenios` - Planes de salud
-   - `convenios_pacientes` - Asignación de planes
+   - `convenios_pacientes` - Asignación
 
 8. **Inventario**
    - `inventario` - Stock de medicamentos/insumos
@@ -212,33 +203,37 @@ El sistema cuenta con **45 tablas** organizadas en módulos:
    - `insumos_utilizados` - Consumo en atenciones
    - `proveedores` - Proveedores
    - `ordenes_compra` - Órdenes de compra
-   - `items_orden_compra` - Detalles de órdenes
 
 9. **Facturación**
    - `facturas` - Facturas y boletas
-   - `items_factura` - Detalles de facturación
+   - `items_factura` - Detalles
    - `presupuestos` - Presupuestos
-   - `items_presupuesto` - Detalles de presupuestos
    - `cajas` - Cajas diarias
    - `movimientos_caja` - Ingresos/egresos
 
 10. **Auditoría**
     - `audit_logs` - Registro de cambios
 
-### Migraciones
+### Comandos Prisma
 
 ```bash
-# Crear nueva migración
+# Generar cliente
+npm run prisma:generate
+
+# Crear migración
 npm run prisma:migrate
 
-# Aplicar migraciones en producción
-npx prisma migrate deploy
+# Ver base de datos (GUI)
+npm run prisma:studio
 
-# Ver estado de migraciones
-npx prisma migrate status
+# Aplicar schema sin migración
+npm run prisma:push
 
-# Resetear base de datos (CUIDADO: borra todo)
+# Resetear base de datos (CUIDADO)
 npm run db:reset
+
+# Cargar datos de prueba
+npm run db:seed
 ```
 
 ### Prisma Studio
@@ -255,6 +250,24 @@ Abre en `http://localhost:5555`
 
 ## 🔌 API Endpoints
 
+### Health Check
+
+#### `GET /health`
+
+Verificar que el servidor está funcionando.
+
+**Response:**
+```json
+{
+  "status": "OK",
+  "message": "VetConnect FAVET API is running",
+  "timestamp": "2025-11-12T03:58:33.000Z",
+  "environment": "development"
+}
+```
+
+---
+
 ### Autenticación
 
 #### `POST /api/auth/login`
@@ -264,8 +277,8 @@ Iniciar sesión.
 **Request:**
 ```json
 {
-  "email": "veterinario@vetconnect.cl",
-  "password": "password123"
+  "email": "admin@vetconnect.cl",
+  "password": "admin123"
 }
 ```
 
@@ -278,9 +291,9 @@ Iniciar sesión.
     "usuario": {
       "id": 1,
       "nombre_completo": "Dr. Juan Pérez",
-      "email": "veterinario@vetconnect.cl",
+      "email": "admin@vetconnect.cl",
       "rut": "12345678-9",
-      "rol": "VETERINARIO",
+      "rol": "ADMIN",
       "centro": {
         "id": 1,
         "nombre": "Hospital Clínico Veterinario Bilbao",
@@ -296,152 +309,19 @@ Iniciar sesión.
 
 ### Pacientes
 
-#### `GET /api/pacientes`
+⚠️ **Por implementar:**
 
-Listar pacientes del centro.
-
-**Query Parameters:**
-- `page` (opcional): Número de página (default: 1)
-- `limit` (opcional): Items por página (default: 50)
-- `search` (opcional): Búsqueda por nombre, chip o número de ficha
-- `fallecido` (opcional): Filtrar por fallecidos (true/false)
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "numero_ficha": "0001",
-      "nombre": "Max",
-      "especie": "CANINO",
-      "raza": "Golden Retriever",
-      "sexo": "MACHO",
-      "peso_kg": "25.5",
-      "chip": "123456789012345",
-      "tutor": {
-        "id": 1,
-        "nombre_completo": "María González",
-        "rut": "12345678-9",
-        "email": "maria@email.com",
-        "telefono": "+56912345678"
-      }
-    }
-  ],
-  "meta": {
-    "total": 150,
-    "page": 1,
-    "limit": 50,
-    "totalPages": 3
-  }
-}
-```
-
-#### `POST /api/pacientes`
-
-Crear nuevo paciente.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-**Request:**
-```json
-{
-  "tutor_id": 1,
-  "nombre": "Max",
-  "especie": "CANINO",
-  "raza": "Golden Retriever",
-  "sexo": "MACHO",
-  "estado_reproductivo": "CASTRADO",
-  "fecha_nacimiento": "2020-05-15T00:00:00.000Z",
-  "peso_kg": 25.5,
-  "chip": "123456789012345",
-  "color": "Dorado",
-  "tamanio": "GRANDE",
-  "caracter": "DOCIL"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "numero_ficha": "0001",
-    "nombre": "Max",
-    ...
-  },
-  "message": "Paciente creado exitosamente"
-}
-```
-
-#### `GET /api/pacientes/[id]`
-
-Obtener paciente por ID (incluye historial).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "numero_ficha": "0001",
-    "nombre": "Max",
-    "tutor": { ... },
-    "fichas_clinicas": [ ... ],
-    "pesos": [ ... ],
-    "vacunas": [ ... ]
-  }
-}
-```
-
-#### `PUT /api/pacientes/[id]`
-
-Actualizar paciente.
-
-**Headers:**
-```
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-**Request:**
-```json
-{
-  "peso_kg": 26.0,
-  "notas": "Paciente con sobrepeso"
-}
-```
-
-#### `DELETE /api/pacientes/[id]`
-
-Eliminar paciente (soft delete).
-
-**Headers:**
-```
-Authorization: Bearer <token>
-```
+- `GET /api/pacientes` - Listar pacientes
+- `POST /api/pacientes` - Crear paciente
+- `GET /api/pacientes/:id` - Obtener paciente
+- `PUT /api/pacientes/:id` - Actualizar paciente
+- `DELETE /api/pacientes/:id` - Eliminar paciente
 
 ---
 
 ### Otros Módulos
 
-Los siguientes endpoints siguen la misma estructura REST:
+Las siguientes rutas están preparadas pero **pendientes de implementación**:
 
 - `/api/tutores` - CRUD de tutores
 - `/api/citas` - CRUD de citas
@@ -450,13 +330,6 @@ Los siguientes endpoints siguen la misma estructura REST:
 - `/api/cirugias` - CRUD de cirugías
 - `/api/inventario` - CRUD de inventario
 - `/api/facturacion` - CRUD de facturas
-
-**Estructura estándar:**
-- `GET /api/{recurso}` - Listar con paginación
-- `POST /api/{recurso}` - Crear
-- `GET /api/{recurso}/[id]` - Obtener por ID
-- `PUT /api/{recurso}/[id]` - Actualizar
-- `DELETE /api/{recurso}/[id]` - Eliminar
 
 ---
 
@@ -470,41 +343,35 @@ El sistema usa **JWT (JSON Web Tokens)** para autenticación.
 2. Backend valida credenciales y genera token JWT
 3. Cliente guarda el token (localStorage/cookies)
 4. Cliente incluye token en header `Authorization: Bearer <token>` en cada request
-5. Middleware `withAuth` valida el token y extrae datos del usuario
+5. Middleware `authenticate` valida el token
 6. API procesa el request con contexto del usuario autenticado
 
-### Middleware de Autenticación
+### Uso del Middleware
 
 ```typescript
-import { withAuth } from '@/middleware/auth-middleware';
-
-export async function GET(request: NextRequest) {
-  return withAuth(request, async (req: AuthenticatedRequest) => {
-    // req.user contiene: userId, email, rol, centroId
-    const userId = req.user!.userId;
-    // ... lógica protegida
-  });
-}
-```
-
-### Middleware con Roles
-
-```typescript
-import { withAuthAndRoles } from '@/middleware/auth-middleware';
+import { authenticate, authorize } from './middleware/auth.middleware';
 import { RolUsuario } from '@prisma/client';
 
-export async function DELETE(request: NextRequest) {
-  return withAuthAndRoles([RolUsuario.ADMIN])(request, async (req) => {
-    // Solo administradores pueden eliminar
-  });
-}
+// Proteger ruta (requiere autenticación)
+router.get('/pacientes', authenticate, (req, res) => {
+  // req.user contiene datos del usuario
+});
+
+// Proteger ruta con roles específicos
+router.delete('/pacientes/:id',
+  authenticate,
+  authorize(RolUsuario.ADMIN),
+  (req, res) => {
+    // Solo administradores
+  }
+);
 ```
 
 ---
 
 ## 📊 Respuestas Estandarizadas
 
-Todas las respuestas de la API siguen este formato:
+Todas las respuestas siguen este formato:
 
 ### Respuesta Exitosa
 
@@ -547,26 +414,20 @@ Todas las respuestas de la API siguen este formato:
 
 ## 🚢 Despliegue
 
-### Vercel (Recomendado)
-
-1. Instalar Vercel CLI:
-```bash
-npm install -g vercel
-```
-
-2. Desplegar:
-```bash
-vercel --prod
-```
-
-3. Configurar variables de entorno en Vercel Dashboard
-
-### Railway
+### Railway (Recomendado)
 
 1. Crear cuenta en [Railway.app](https://railway.app)
 2. Conectar repositorio de GitHub
 3. Configurar variables de entorno
 4. Desplegar automáticamente
+
+### Render
+
+1. Crear cuenta en [Render.com](https://render.com)
+2. Crear nuevo Web Service
+3. Conectar con GitHub
+4. Configurar variables de entorno
+5. Deploy
 
 ### Docker
 
@@ -584,15 +445,14 @@ docker run -p 3000:3000 --env-file .env vetconnect-backend
 
 ```bash
 # Desarrollo
-npm run dev                 # Iniciar servidor de desarrollo
-npm run build               # Build para producción
+npm run dev                 # Iniciar servidor de desarrollo con hot-reload
+npm run build               # Compilar TypeScript a JavaScript
 npm run start               # Iniciar en producción
-npm run lint                # Ejecutar linter
 
 # Prisma
 npm run prisma:generate     # Generar cliente Prisma
 npm run prisma:migrate      # Crear y aplicar migración
-npm run prisma:studio       # Abrir Prisma Studio
+npm run prisma:studio       # Abrir Prisma Studio (GUI)
 npm run prisma:push         # Push schema sin migración
 npm run db:reset            # Resetear base de datos
 npm run db:seed             # Cargar datos de prueba
@@ -601,6 +461,39 @@ npm run db:seed             # Cargar datos de prueba
 npm test                    # Ejecutar tests
 npm run test:watch          # Tests en modo watch
 ```
+
+---
+
+## ✅ Estado del Proyecto
+
+### ✅ Completado
+
+- [x] Backend Express + TypeScript configurado
+- [x] Base de datos PostgreSQL (45 tablas) migrada a Neon
+- [x] Prisma ORM configurado
+- [x] Autenticación JWT implementada
+- [x] Middleware de seguridad (helmet, cors, rate-limit)
+- [x] API de login funcional
+- [x] Estructura modular (controllers, routes, middleware)
+- [x] Manejo centralizado de errores
+- [x] Respuestas API estandarizadas
+- [x] Documentación completa
+
+### ⚠️ Pendiente
+
+- [ ] Implementar CRUD de Pacientes
+- [ ] Implementar CRUD de Tutores
+- [ ] Implementar CRUD de Citas
+- [ ] Implementar CRUD de Fichas Clínicas
+- [ ] Implementar CRUD de Hospitalización
+- [ ] Implementar CRUD de Cirugías
+- [ ] Implementar CRUD de Inventario
+- [ ] Implementar CRUD de Facturación
+- [ ] Crear seed de datos de prueba
+- [ ] Testing unitario
+- [ ] Testing de integración
+- [ ] Documentación API (Swagger/OpenAPI)
+- [ ] CI/CD pipeline
 
 ---
 
@@ -620,13 +513,14 @@ Este proyecto es desarrollado por **Aura Digital SPA** para la Universidad de Ch
 
 - **Email**: contacto@auradigital.dev
 - **Soporte**: De lunes a viernes, 09:00 - 18:30 hrs
-- **Emergencias**: 24/7
+- **GitHub**: https://github.com/AuraDigitalDevChile/vetconnect-favet-backend
 
 ---
 
 ## 🔗 Enlaces Útiles
 
-- [Documentación Next.js 14](https://nextjs.org/docs)
+- [Documentación Express](https://expressjs.com/)
 - [Documentación Prisma](https://www.prisma.io/docs)
 - [Documentación PostgreSQL](https://www.postgresql.org/docs/)
 - [Neon PostgreSQL](https://neon.tech/docs)
+- [JWT](https://jwt.io/introduction)
