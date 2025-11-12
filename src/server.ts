@@ -3,7 +3,7 @@
  * Servidor Express + TypeScript + Prisma
  */
 
-import express, { Application } from 'express';
+import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -75,7 +75,7 @@ app.use('/api/', limiter);
 // ==========================================
 
 // Health check
-app.get('/health', (_req, res) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'OK',
     message: 'VetConnect FAVET API is running',
@@ -123,12 +123,12 @@ app.listen(PORT, () => {
 });
 
 // Manejo de errores no capturados
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', (error: Error) => {
   console.error('❌ Uncaught Exception:', error);
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
   console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });

@@ -11,6 +11,7 @@ model Centro {
   id                 Int               @id @default(autoincrement())
   nombre             String            @db.VarChar(200)
   codigo             String            @unique @db.VarChar(50)
+  rut                String            @unique @db.VarChar(20) // RUT del centro para facturación
   direccion          String?           @db.VarChar(500)
   telefono           String?           @db.VarChar(50)
   email              String?           @db.VarChar(200)

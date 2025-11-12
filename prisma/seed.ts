@@ -25,6 +25,7 @@ async function main() {
     create: {
       nombre: 'Hospital Clínico Veterinario Bilbao',
       codigo: 'BILBAO',
+      rut: '60805000-0', // RUT Universidad de Chile
       direccion: 'Av. Santa Rosa 11735, La Pintana, Santiago',
       telefono: '+56 2 2978 5700',
       email: 'contacto@bilbao.favet.uchile.cl',
@@ -38,6 +39,7 @@ async function main() {
     create: {
       nombre: 'Hospital Clínico Veterinario El Roble',
       codigo: 'ELROBLE',
+      rut: '60805000-1', // RUT Universidad de Chile - sucursal
       direccion: 'Av. Larraín 9750, La Reina, Santiago',
       telefono: '+56 2 2978 5800',
       email: 'contacto@elroble.favet.uchile.cl',
@@ -51,6 +53,7 @@ async function main() {
     create: {
       nombre: 'Hospital Docente Veterinario FAVET',
       codigo: 'HOSPITAL',
+      rut: '60805000-2', // RUT Universidad de Chile - docencia
       direccion: 'Av. Santa Rosa 11735, La Pintana, Santiago',
       telefono: '+56 2 2978 5600',
       email: 'contacto@hospital.favet.uchile.cl',
@@ -599,6 +602,227 @@ async function main() {
   console.log('✅ 2 convenios creados\n');
 
   // ==========================================
+  // 9. FACTURAS Y BOLETAS
+  // ==========================================
+  console.log('🧾 Creando facturas...');
+
+  // Factura 1: Consulta + Vacuna + Desparasitación (paciente Luna - Tutor 1)
+  const factura1 = await prisma.factura.create({
+    data: {
+      centro_id: centroBilbao.id,
+      paciente_id: paciente2.id, // Luna (gato Persa)
+      tutor_id: tutor1.id,
+      usuario_id: recep1.id,
+      numero_factura: 'FAVET-2025-0001',
+      tipo_documento: 'BOLETA',
+      fecha_emision: new Date('2025-11-01'),
+      subtotal: 53000,
+      descuento: 0,
+      iva: 10070, // 19% de 53000
+      total: 63070,
+      metodo_pago: 'EFECTIVO',
+      estado: 'PAGADA',
+      fecha_pago: new Date('2025-11-01'),
+      observaciones: 'Gato con herida quirúrgica en proceso de cicatrización. Se indica reposo y control en 10 días.',
+      folio_sii: 'SII-001-2025',
+    },
+  });
+
+  await prisma.itemFactura.createMany({
+    data: [
+      {
+        factura_id: factura1.id,
+        tipo_item: 'CONSULTA',
+        descripcion: 'Consulta General',
+        cantidad: 1,
+        precio_unitario: 28000,
+        descuento: 0,
+        subtotal: 28000,
+      },
+      {
+        factura_id: factura1.id,
+        tipo_item: 'VACUNA',
+        descripcion: 'Vacuna Trivalente Felina',
+        cantidad: 1,
+        precio_unitario: 15000,
+        descuento: 0,
+        subtotal: 15000,
+      },
+      {
+        factura_id: factura1.id,
+        tipo_item: 'MEDICAMENTO',
+        descripcion: 'Desparasitación Interna',
+        cantidad: 1,
+        precio_unitario: 10000,
+        descuento: 0,
+        subtotal: 10000,
+      },
+    ],
+  });
+
+  // Factura 2: Control Post-Op + Antibiótico (paciente Max - Tutor 1)
+  const factura2 = await prisma.factura.create({
+    data: {
+      centro_id: centroBilbao.id,
+      paciente_id: paciente1.id, // Max (Golden Retriever)
+      tutor_id: tutor1.id,
+      usuario_id: recep1.id,
+      numero_factura: 'FAVET-2025-0002',
+      tipo_documento: 'BOLETA',
+      fecha_emision: new Date('2025-11-05'),
+      subtotal: 47000,
+      descuento: 0,
+      iva: 8930, // 19% de 47000
+      total: 55930,
+      metodo_pago: 'TARJETA_DEBITO',
+      estado: 'PAGADA',
+      fecha_pago: new Date('2025-11-05'),
+      observaciones: 'Evolución favorable. Continuar con antibióticos por 7 días más.',
+      folio_sii: 'SII-002-2025',
+    },
+  });
+
+  await prisma.itemFactura.createMany({
+    data: [
+      {
+        factura_id: factura2.id,
+        tipo_item: 'CONTROL',
+        descripcion: 'Control Post-Operativo',
+        cantidad: 1,
+        precio_unitario: 22000,
+        descuento: 0,
+        subtotal: 22000,
+      },
+      {
+        factura_id: factura2.id,
+        tipo_item: 'MEDICAMENTO',
+        descripcion: 'Antibiótico (Amoxicilina 500mg) - 14 comprimidos',
+        cantidad: 1,
+        precio_unitario: 25000,
+        descuento: 0,
+        subtotal: 25000,
+      },
+    ],
+  });
+
+  // Factura 3: Esterilización Canino (paciente Rocky - Tutor 2)
+  const factura3 = await prisma.factura.create({
+    data: {
+      centro_id: centroBilbao.id,
+      paciente_id: paciente3.id, // Rocky (Pitbull)
+      tutor_id: tutor2.id,
+      usuario_id: recep2.id,
+      numero_factura: 'FAVET-2025-0003',
+      tipo_documento: 'BOLETA',
+      fecha_emision: new Date('2025-11-08'),
+      subtotal: 85000,
+      descuento: 12750, // 15% descuento por convenio
+      iva: 13728, // 19% de (85000 - 12750)
+      total: 85978,
+      metodo_pago: 'TRANSFERENCIA',
+      estado: 'PAGADA',
+      fecha_pago: new Date('2025-11-09'),
+      observaciones: 'Esterilización programada. Incluye pre-quirúrgico, anestesia, cirugía y post-quirúrgico.',
+      folio_sii: 'SII-003-2025',
+    },
+  });
+
+  await prisma.itemFactura.createMany({
+    data: [
+      {
+        factura_id: factura3.id,
+        tipo_item: 'CIRUGIA',
+        descripcion: 'Esterilización Canino (Castración)',
+        cantidad: 1,
+        precio_unitario: 65000,
+        descuento: 9750,
+        subtotal: 55250,
+      },
+      {
+        factura_id: factura3.id,
+        tipo_item: 'EXAMEN',
+        descripcion: 'Examen Pre-Quirúrgico Completo',
+        cantidad: 1,
+        precio_unitario: 12000,
+        descuento: 1800,
+        subtotal: 10200,
+      },
+      {
+        factura_id: factura3.id,
+        tipo_item: 'MEDICAMENTO',
+        descripcion: 'Kit Post-Quirúrgico (Analgésicos + Antibióticos)',
+        cantidad: 1,
+        precio_unitario: 8000,
+        descuento: 1200,
+        subtotal: 6800,
+      },
+    ],
+  });
+
+  // Factura 4: Emergencia + Hospitalización (paciente Toby - Tutor 4) - PENDIENTE
+  const factura4 = await prisma.factura.create({
+    data: {
+      centro_id: centroElRoble.id,
+      paciente_id: paciente6.id, // Toby (Chihuahua)
+      tutor_id: tutor4.id,
+      usuario_id: vet3.id,
+      numero_factura: 'ROB-2025-0001',
+      tipo_documento: 'FACTURA',
+      fecha_emision: new Date('2025-11-10'),
+      fecha_vencimiento: new Date('2025-11-20'),
+      subtotal: 185000,
+      descuento: 0,
+      iva: 35150, // 19% de 185000
+      total: 220150,
+      estado: 'PENDIENTE',
+      observaciones: 'Atención de emergencia por intoxicación. Hospitalizado 2 días. Factura pendiente de pago.',
+    },
+  });
+
+  await prisma.itemFactura.createMany({
+    data: [
+      {
+        factura_id: factura4.id,
+        tipo_item: 'EMERGENCIA',
+        descripcion: 'Atención de Emergencia 24/7',
+        cantidad: 1,
+        precio_unitario: 50000,
+        descuento: 0,
+        subtotal: 50000,
+      },
+      {
+        factura_id: factura4.id,
+        tipo_item: 'HOSPITALIZACION',
+        descripcion: 'Hospitalización (2 días)',
+        cantidad: 2,
+        precio_unitario: 45000,
+        descuento: 0,
+        subtotal: 90000,
+      },
+      {
+        factura_id: factura4.id,
+        tipo_item: 'EXAMEN',
+        descripcion: 'Exámenes de Laboratorio Completos',
+        cantidad: 1,
+        precio_unitario: 28000,
+        descuento: 0,
+        subtotal: 28000,
+      },
+      {
+        factura_id: factura4.id,
+        tipo_item: 'MEDICAMENTO',
+        descripcion: 'Suero + Medicamentos Intravenosos',
+        cantidad: 1,
+        precio_unitario: 17000,
+        descuento: 0,
+        subtotal: 17000,
+      },
+    ],
+  });
+
+  console.log('✅ 4 facturas creadas con items detallados\n');
+
+  // ==========================================
   // RESUMEN FINAL
   // ==========================================
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -606,14 +830,15 @@ async function main() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   console.log('📊 Resumen de datos creados:');
-  console.log(`   • 3 Centros veterinarios`);
+  console.log(`   • 3 Centros veterinarios (con RUT)`);
   console.log(`   • 8 Usuarios (1 admin, 3 veterinarios, 2 recepcionistas, 1 asistente)`);
   console.log(`   • 5 Tutores`);
   console.log(`   • 8 Pacientes (5 caninos, 3 felinos)`);
   console.log(`   • 3 Citas programadas`);
   console.log(`   • 4 Items de inventario`);
   console.log(`   • 2 Proveedores`);
-  console.log(`   • 2 Convenios\n`);
+  console.log(`   • 2 Convenios`);
+  console.log(`   • 4 Facturas con 15 items totales\n`);
 
   console.log('🔐 Credenciales de acceso:');
   console.log('   ┌─────────────────────────────────────────┐');
