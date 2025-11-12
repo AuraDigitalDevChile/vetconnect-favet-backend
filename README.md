@@ -496,33 +496,43 @@ npm run test:watch          # Tests en modo watch
 
 ## ✅ Estado del Proyecto
 
-### ✅ Completado
+### ✅ Completado (~60%)
 
+**Infraestructura:**
 - [x] Backend Express + TypeScript configurado
 - [x] Base de datos PostgreSQL (45 tablas) migrada a Neon
 - [x] Prisma ORM configurado
 - [x] Autenticación JWT implementada
 - [x] Middleware de seguridad (helmet, cors, rate-limit)
-- [x] API de login funcional
 - [x] Estructura modular (controllers, routes, middleware)
 - [x] Manejo centralizado de errores
 - [x] Respuestas API estandarizadas
-- [x] Documentación completa
-- [x] **Seed de datos de prueba completo (3 centros, 8 usuarios, 5 tutores, 8 pacientes, etc.)**
+- [x] **Seed de datos de prueba completo (3 centros, 8 usuarios, 5 tutores, 8 pacientes, 3 citas, 4 facturas)**
 
-### ⚠️ Pendiente
+**Módulos Backend Implementados:**
+- [x] **Autenticación** - Login, registro, cambio de contraseña
+- [x] **Pacientes** - CRUD completo con búsqueda y filtros
+- [x] **Tutores** - CRUD con validación de RUT chileno
+- [x] **Citas** - CRUD + calendario con filtros
+- [x] **Fichas Clínicas** - CRUD + exámenes + prescripciones
+- [x] **Cirugías** - CRUD completo + signos vitales + insumos (11 endpoints)
+- [x] **Usuarios** - Listado de veterinarios y staff
+- [x] **Facturación** - CRUD con items de factura
+- [x] **Inventario** - CRUD básico
 
-- [ ] Implementar CRUD de Pacientes
-- [ ] Implementar CRUD de Tutores
-- [ ] Implementar CRUD de Citas
-- [ ] Implementar CRUD de Fichas Clínicas
-- [ ] Implementar CRUD de Hospitalización
-- [ ] Implementar CRUD de Cirugías
-- [ ] Implementar CRUD de Inventario
-- [ ] Implementar CRUD de Facturación
-- [ ] Testing unitario
+### 🚧 En Progreso
+
+- [ ] **Hospitalización** - Controller creado pero vacío (0%)
+- [ ] Testing unitario (0%)
+- [ ] Documentación API con Swagger (0%)
+
+### ⏳ Pendiente
+
+- [ ] Telemedicina (videollamadas)
+- [ ] Reserva Online (portal público)
+- [ ] Notificaciones (WhatsApp + Email)
+- [ ] Integración SII (facturación electrónica)
 - [ ] Testing de integración
-- [ ] Documentación API (Swagger/OpenAPI)
 - [ ] CI/CD pipeline
 
 ---
