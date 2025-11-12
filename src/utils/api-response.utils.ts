@@ -76,6 +76,13 @@ export class ApiResponseUtils {
   }
 
   /**
+   * Solicitud inválida
+   */
+  static badRequest(res: Response, message: string = 'Solicitud inválida') {
+    return this.error(res, message, 400);
+  }
+
+  /**
    * Creado exitosamente
    */
   static created<T>(res: Response, data: T, message?: string) {
