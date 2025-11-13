@@ -16,5 +16,13 @@ services:
         sync: false
       - key: PORT
         value: 10000
+      - key: CORS_ORIGIN
+        value: http://localhost:8080,http://localhost:5173,http://localhost:3000,https://vetconnect-favet-demo.pages.dev
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: RATE_LIMIT_REQUESTS
+        value: 100
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 60000
     healthCheckPath: /health
     autoDeploy: true
