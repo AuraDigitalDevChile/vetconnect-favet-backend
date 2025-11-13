@@ -1,0 +1,143 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "SII - Boletas Electrónicas",
+  "collectionId": "sii-boletas",
+  "dateExported": "2024-11-13",
+  "version": "1.0",
+  "requests": [
+    {
+      "name": "1. Login",
+      "method": "POST",
+      "url": "http://localhost:3000/api/auth/login",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"admin@favet.cl\",\n  \"password\": \"admin123\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "name": "2. Generar Boleta Demo - Simple",
+      "method": "POST",
+      "url": "http://localhost:3000/api/boleta/demo",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"centro_id\": 1,\n  \"items\": [\n    {\n      \"nombre\": \"Consulta veterinaria\",\n      \"descripcion\": \"Consulta general\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 25000\n    }\n  ]\n}"
+      },
+      "tests": []
+    },
+    {
+      "name": "3. Generar Boleta Demo - Con Receptor",
+      "method": "POST",
+      "url": "http://localhost:3000/api/boleta/demo",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"centro_id\": 1,\n  \"factura_id\": 1,\n  \"receptor\": {\n    \"rut\": \"12345678-9\",\n    \"razonSocial\": \"Juan Pérez González\"\n  },\n  \"items\": [\n    {\n      \"nombre\": \"Consulta veterinaria\",\n      \"descripcion\": \"Consulta general + examen físico completo\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 25000\n    },\n    {\n      \"nombre\": \"Vacuna antirrábica\",\n      \"descripcion\": \"Vacuna antirrábica anual\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 15000\n    },\n    {\n      \"nombre\": \"Desparasitación interna\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 8000\n    }\n  ],\n  \"ambiente\": \"certificacion\"\n}"
+      },
+      "tests": []
+    },
+    {
+      "name": "4. Generar Boleta Demo - Con Descuento",
+      "method": "POST",
+      "url": "http://localhost:3000/api/boleta/demo",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"centro_id\": 1,\n  \"items\": [\n    {\n      \"nombre\": \"Consulta de telemedicina\",\n      \"descripcion\": \"Consulta remota por videollamada\",\n      \"cantidad\": 1,\n      \"precioUnitario\": 20000,\n      \"descuentoPct\": 15\n    }\n  ]\n}"
+      },
+      "tests": []
+    },
+    {
+      "name": "5. Consultar Estado de Boleta",
+      "method": "GET",
+      "url": "http://localhost:3000/api/boleta/status/DEMO-1731533280456",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "tests": []
+    },
+    {
+      "name": "6. Obtener Configuración SII",
+      "method": "GET",
+      "url": "http://localhost:3000/api/boleta/config",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "tests": []
+    },
+    {
+      "name": "7. Probar Conexión con SII",
+      "method": "GET",
+      "url": "http://localhost:3000/api/boleta/test-connection",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "tests": []
+    },
+    {
+      "name": "8. Info Certificado Digital",
+      "method": "GET",
+      "url": "http://localhost:3000/api/boleta/certificate-info",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "tests": []
+    }
+  ],
+  "variables": [
+    {
+      "name": "token",
+      "value": "your-jwt-token-here"
+    },
+    {
+      "name": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ]
+}

@@ -26,6 +26,7 @@ import cirugiasRoutes from './routes/cirugias.routes';
 // import cargaMasivaRoutes from './routes/carga-masiva.routes'; // DISABLED
 import facturacionRoutes from './routes/facturacion.routes';
 import telemedicinRoutes from './routes/telemedicina.routes';
+import boletaRoutes from './routes/boleta.routes';
 
 // Middleware de errores
 import { errorHandler } from './middleware/error.middleware';
@@ -104,6 +105,7 @@ app.use('/api/cirugias', cirugiasRoutes);
 // app.use('/api/carga-masiva', cargaMasivaRoutes); // DISABLED
 app.use('/api/facturacion', facturacionRoutes);
 app.use('/api/telemedicina', telemedicinRoutes);
+app.use('/api/boleta', boletaRoutes);
 
 // ==========================================
 // MANEJO DE ERRORES

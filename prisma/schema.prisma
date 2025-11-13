@@ -8,28 +8,29 @@ datasource db {
 }
 
 model Centro {
-  id                 Int               @id @default(autoincrement())
-  nombre             String            @db.VarChar(200)
-  codigo             String            @unique @db.VarChar(50)
-  rut                String            @unique @db.VarChar(20) // RUT del centro para facturación
-  direccion          String?           @db.VarChar(500)
-  telefono           String?           @db.VarChar(50)
-  email              String?           @db.VarChar(200)
-  capacidad_usuarios Int               @default(50)
-  activo             Boolean           @default(true)
-  created_at         DateTime          @default(now())
-  updated_at         DateTime          @updatedAt
-  boxes              Box[]
-  cajas              Caja[]
-  cirugias           Cirugia[]
-  citas              Cita[]
-  facturas           Factura[]
-  fichas_clinicas    FichaClinica[]
-  hospitalizaciones  Hospitalizacion[]
-  inventario         Inventario[]
-  ordenes_compra     OrdenCompra[]
-  pacientes          Paciente[]
-  usuarios           Usuario[]
+  id                   Int                 @id @default(autoincrement())
+  nombre               String              @db.VarChar(200)
+  codigo               String              @unique @db.VarChar(50)
+  rut                  String              @unique @db.VarChar(20) // RUT del centro para facturación
+  direccion            String?             @db.VarChar(500)
+  telefono             String?             @db.VarChar(50)
+  email                String?             @db.VarChar(200)
+  capacidad_usuarios   Int                 @default(50)
+  activo               Boolean             @default(true)
+  created_at           DateTime            @default(now())
+  updated_at           DateTime            @updatedAt
+  boletas_electronicas BoletaElectronica[]
+  boxes                Box[]
+  cajas                Caja[]
+  cirugias             Cirugia[]
+  citas                Cita[]
+  facturas             Factura[]
+  fichas_clinicas      FichaClinica[]
+  hospitalizaciones    Hospitalizacion[]
+  inventario           Inventario[]
+  ordenes_compra       OrdenCompra[]
+  pacientes            Paciente[]
+  usuarios             Usuario[]
 
   @@map("centros")
 }
@@ -681,32 +682,33 @@ model ItemOrdenCompra {
 }
 
 model Factura {
-  id                Int           @id @default(autoincrement())
-  centro_id         Int
-  paciente_id       Int
-  tutor_id          Int
-  usuario_id        Int
-  numero_factura    String        @unique @db.VarChar(50)
-  tipo_documento    TipoDocumento
-  fecha_emision     DateTime      @default(now())
-  fecha_vencimiento DateTime?
-  fecha_pago        DateTime?
-  subtotal          Decimal       @db.Decimal(12, 2)
-  descuento         Decimal       @default(0) @db.Decimal(10, 2)
-  iva               Decimal       @default(0) @db.Decimal(10, 2)
-  total             Decimal       @db.Decimal(12, 2)
-  metodo_pago       MetodoPago?
-  estado            EstadoFactura @default(PENDIENTE)
-  observaciones     String?
-  archivo_pdf_url   String?       @db.VarChar(500)
-  folio_sii         String?       @db.VarChar(50)
-  created_at        DateTime      @default(now())
-  updated_at        DateTime      @updatedAt
-  centro            Centro        @relation(fields: [centro_id], references: [id], onDelete: Cascade)
-  paciente          Paciente      @relation(fields: [paciente_id], references: [id], onDelete: Cascade)
-  tutor             Tutor         @relation(fields: [tutor_id], references: [id], onDelete: Cascade)
-  usuario           Usuario       @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
-  items             ItemFactura[]
+  id                 Int                @id @default(autoincrement())
+  centro_id          Int
+  paciente_id        Int
+  tutor_id           Int
+  usuario_id         Int
+  numero_factura     String             @unique @db.VarChar(50)
+  tipo_documento     TipoDocumento
+  fecha_emision      DateTime           @default(now())
+  fecha_vencimiento  DateTime?
+  fecha_pago         DateTime?
+  subtotal           Decimal            @db.Decimal(12, 2)
+  descuento          Decimal            @default(0) @db.Decimal(10, 2)
+  iva                Decimal            @default(0) @db.Decimal(10, 2)
+  total              Decimal            @db.Decimal(12, 2)
+  metodo_pago        MetodoPago?
+  estado             EstadoFactura      @default(PENDIENTE)
+  observaciones      String?
+  archivo_pdf_url    String?            @db.VarChar(500)
+  folio_sii          String?            @db.VarChar(50)
+  created_at         DateTime           @default(now())
+  updated_at         DateTime           @updatedAt
+  boleta_electronica BoletaElectronica?
+  centro             Centro             @relation(fields: [centro_id], references: [id], onDelete: Cascade)
+  paciente           Paciente           @relation(fields: [paciente_id], references: [id], onDelete: Cascade)
+  tutor              Tutor              @relation(fields: [tutor_id], references: [id], onDelete: Cascade)
+  usuario            Usuario            @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  items              ItemFactura[]
 
   @@index([centro_id])
   @@index([paciente_id])
@@ -730,6 +732,69 @@ model ItemFactura {
 
   @@index([factura_id])
   @@map("items_factura")
+}
+
+// ============================================
+// BOLETAS ELECTRONICAS SII
+// ============================================
+
+model BoletaElectronica {
+  id                     Int              @id @default(autoincrement())
+  factura_id             Int?             @unique // Relación opcional con factura interna
+  centro_id              Int
+  tipo_dte               Int              @default(39) // 39 = Boleta Electrónica
+  folio                  String?          @unique @db.VarChar(50)
+  rut_emisor             String           @db.VarChar(20)
+  razon_social_emisor    String           @db.VarChar(300)
+  rut_receptor           String?          @db.VarChar(20)
+  razon_social_receptor  String?          @db.VarChar(300)
+  fecha_emision          DateTime         @default(now())
+  monto_neto             Decimal          @db.Decimal(12, 2)
+  monto_exento           Decimal          @default(0) @db.Decimal(12, 2)
+  monto_iva              Decimal          @db.Decimal(12, 2)
+  monto_total            Decimal          @db.Decimal(12, 2)
+  xml_generado           String?          @db.Text // XML del DTE generado
+  xml_firmado            String?          @db.Text // XML firmado
+  track_id               String?          @unique @db.VarChar(100) // Track ID del SII
+  estado                 EstadoBoletaSII  @default(BORRADOR)
+  respuesta_sii          String?          @db.Text // Respuesta completa del SII
+  codigo_rechazo         String?          @db.VarChar(10)
+  glosa_rechazo          String?          @db.VarChar(500)
+  fecha_envio_sii        DateTime?
+  fecha_respuesta_sii    DateTime?
+  ambiente               String           @default("certificacion") @db.VarChar(20) // certificacion | produccion
+  pdf_url                String?          @db.VarChar(500)
+  created_at             DateTime         @default(now())
+  updated_at             DateTime         @updatedAt
+  centro                 Centro           @relation(fields: [centro_id], references: [id], onDelete: Cascade)
+  factura                Factura?         @relation(fields: [factura_id], references: [id])
+  items                  ItemBoletaSII[]
+
+  @@index([centro_id])
+  @@index([track_id])
+  @@index([estado])
+  @@index([fecha_emision])
+  @@map("boletas_electronicas")
+}
+
+model ItemBoletaSII {
+  id                Int                @id @default(autoincrement())
+  boleta_id         Int
+  numero_linea      Int
+  nombre            String             @db.VarChar(300)
+  descripcion       String?            @db.VarChar(500)
+  cantidad          Decimal            @db.Decimal(10, 3)
+  unidad_medida     String?            @db.VarChar(10)
+  precio_unitario   Decimal            @db.Decimal(12, 2)
+  descuento_pct     Decimal            @default(0) @db.Decimal(5, 2)
+  recargo_pct       Decimal            @default(0) @db.Decimal(5, 2)
+  monto_item        Decimal            @db.Decimal(12, 2)
+  indicador_exento  Boolean            @default(false)
+  created_at        DateTime           @default(now())
+  boleta            BoletaElectronica  @relation(fields: [boleta_id], references: [id], onDelete: Cascade)
+
+  @@index([boleta_id])
+  @@map("items_boleta_sii")
 }
 
 model Caja {
@@ -981,6 +1046,14 @@ enum TipoDocumento {
   FACTURA
   NOTA_CREDITO
   NOTA_DEBITO
+}
+
+enum EstadoBoletaSII {
+  BORRADOR
+  ENVIADO
+  ACEPTADO
+  RECHAZADO
+  ERROR
 }
 
 enum EstadoSesionTelemedicina {
