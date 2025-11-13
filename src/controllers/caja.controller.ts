@@ -83,7 +83,7 @@ export const obtenerCajaActiva = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error al obtener caja activa:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al obtener caja activa',
       message: error.message,
@@ -153,7 +153,7 @@ export const abrirCaja = async (req: Request, res: Response) => {
     }
 
     console.error('Error al abrir caja:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al abrir caja',
       message: error.message,
@@ -238,7 +238,7 @@ export const cerrarCaja = async (req: Request, res: Response) => {
     }
 
     console.error('Error al cerrar caja:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al cerrar caja',
       message: error.message,
@@ -321,7 +321,7 @@ export const registrarMovimiento = async (req: Request, res: Response) => {
     }
 
     console.error('Error al registrar movimiento:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al registrar movimiento',
       message: error.message,

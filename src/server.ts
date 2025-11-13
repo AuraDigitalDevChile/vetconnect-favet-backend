@@ -20,13 +20,13 @@ import citasRoutes from './routes/citas.routes';
 import fichasRoutes from './routes/fichas.routes';
 import hospitalizacionRoutes from './routes/hospitalizacion.routes';
 import cirugiasRoutes from './routes/cirugias.routes';
-// import inventarioRoutes from './routes/inventario.routes'; // DISABLED - TypeScript errors
+import inventarioRoutes from './routes/inventario.routes';
 // import serviciosRoutes from './routes/servicios.routes'; // DISABLED - Schema faltante
 // import reportesRoutes from './routes/reportes.routes'; // DISABLED - TypeScript errors
 // import migracionRoutes from './routes/migracion.routes'; // DISABLED - TypeScript errors
 // import proveedoresRoutes from './routes/proveedores.routes'; // DISABLED - TypeScript errors
 // import ordenesCompraRoutes from './routes/ordenes-compra.routes'; // DISABLED - TypeScript errors
-// import cajaRoutes from './routes/caja.routes'; // DISABLED - TypeScript errors
+import cajaRoutes from './routes/caja.routes';
 import facturacionRoutes from './routes/facturacion.routes';
 import telemedicinRoutes from './routes/telemedicina.routes';
 import boletaRoutes from './routes/boleta.routes';
@@ -102,13 +102,13 @@ app.use('/api/citas', citasRoutes);
 app.use('/api/fichas-clinicas', fichasRoutes);
 app.use('/api/hospitalizacion', hospitalizacionRoutes);
 app.use('/api/cirugias', cirugiasRoutes);
-// app.use('/api/inventario', inventarioRoutes); // DISABLED - TypeScript errors
+app.use('/api/inventario', inventarioRoutes);
 // app.use('/api/servicios', serviciosRoutes); // DISABLED
 // app.use('/api/reportes', reportesRoutes); // DISABLED - TypeScript errors
 // app.use('/api/migracion', migracionRoutes); // DISABLED - TypeScript errors
 // app.use('/api/proveedores', proveedoresRoutes); // DISABLED - TypeScript errors
 // app.use('/api/ordenes-compra', ordenesCompraRoutes); // DISABLED - TypeScript errors
-// app.use('/api/caja', cajaRoutes); // DISABLED - TypeScript errors
+app.use('/api/caja', cajaRoutes);
 app.use('/api/facturacion', facturacionRoutes);
 app.use('/api/telemedicina', telemedicinRoutes);
 app.use('/api/boleta', boletaRoutes);

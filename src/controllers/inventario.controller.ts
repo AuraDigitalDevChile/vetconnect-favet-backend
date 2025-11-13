@@ -178,7 +178,7 @@ export const obtener = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error al obtener item de inventario:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al obtener item de inventario',
       message: error.message,
@@ -250,7 +250,7 @@ export const crear = async (req: Request, res: Response) => {
     }
 
     console.error('Error al crear item de inventario:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al crear item de inventario',
       message: error.message,
@@ -323,7 +323,7 @@ export const actualizar = async (req: Request, res: Response) => {
     }
 
     console.error('Error al actualizar item de inventario:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al actualizar item de inventario',
       message: error.message,
@@ -360,7 +360,7 @@ export const eliminar = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error al eliminar item de inventario:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al eliminar item de inventario',
       message: error.message,
@@ -405,7 +405,7 @@ export const ajustarStock = async (req: Request, res: Response) => {
     }
 
     // Crear movimiento y actualizar stock en una transacción
-    const [movimiento, itemActualizado] = await prisma.$transaction([
+    const [movimiento] = await prisma.$transaction([
       prisma.movimientoInventario.create({
         data: datos,
         include: {
@@ -449,7 +449,7 @@ export const ajustarStock = async (req: Request, res: Response) => {
     }
 
     console.error('Error al ajustar stock:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al ajustar stock',
       message: error.message,
@@ -666,9 +666,301 @@ export const buscarPorPrecio = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error en consultor de precios:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al buscar precio',
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * Descargar plantilla de inventario Excel
+ * GET /api/inventario/descargar-plantilla
+ */
+export const descargarPlantilla = async (req: Request, res: Response) => {
+  try {
+    const ExcelJS = require('exceljs');
+
+    // Crear workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Inventario');
+
+    // Definir columnas
+    worksheet.columns = [
+      { header: 'sku_interno', key: 'sku_interno', width: 15 },
+      { header: 'codigo_barras', key: 'codigo_barras', width: 15 },
+      { header: 'nombre', key: 'nombre', width: 30 },
+      { header: 'categoria', key: 'categoria', width: 20 },
+      { header: 'descripcion', key: 'descripcion', width: 40 },
+      { header: 'unidad_medida', key: 'unidad_medida', width: 15 },
+      { header: 'unidad_compra', key: 'unidad_compra', width: 15 },
+      { header: 'factor_conversion', key: 'factor_conversion', width: 15 },
+      { header: 'stock_actual', key: 'stock_actual', width: 12 },
+      { header: 'stock_minimo', key: 'stock_minimo', width: 12 },
+      { header: 'precio_compra', key: 'precio_compra', width: 15 },
+      { header: 'precio_venta', key: 'precio_venta', width: 15 },
+      { header: 'es_farmaco', key: 'es_farmaco', width: 12 },
+      { header: 'presentacion', key: 'presentacion', width: 20 },
+      { header: 'concentracion', key: 'concentracion', width: 20 },
+      { header: 'volumen', key: 'volumen', width: 15 },
+      { header: 'es_multidosis', key: 'es_multidosis', width: 12 },
+      { header: 'lote', key: 'lote', width: 15 },
+      { header: 'fecha_vencimiento', key: 'fecha_vencimiento', width: 18 },
+    ];
+
+    // Estilo del header
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF0070C0' },
+    };
+    worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Agregar filas de ejemplo
+    worksheet.addRow({
+      sku_interno: 'FARM-001',
+      codigo_barras: '7891234567890',
+      nombre: 'Vacuna Antirrábica',
+      categoria: 'FARMACO',
+      descripcion: 'Vacuna para prevenir la rabia',
+      unidad_medida: 'ml',
+      unidad_compra: 'caja',
+      factor_conversion: 10,
+      stock_actual: 50,
+      stock_minimo: 10,
+      precio_compra: 15000,
+      precio_venta: 25000,
+      es_farmaco: 'true',
+      presentacion: 'Frasco 10ml',
+      concentracion: '100mg/ml',
+      volumen: '10ml',
+      es_multidosis: 'false',
+      lote: 'L2024-001',
+      fecha_vencimiento: '2025-12-31',
+    });
+
+    worksheet.addRow({
+      sku_interno: 'INSU-001',
+      codigo_barras: '7891234567891',
+      nombre: 'Jeringa 5ml',
+      categoria: 'INSUMO',
+      descripcion: 'Jeringa desechable',
+      unidad_medida: 'unidad',
+      unidad_compra: 'caja',
+      factor_conversion: 100,
+      stock_actual: 500,
+      stock_minimo: 100,
+      precio_compra: 50,
+      precio_venta: 100,
+      es_farmaco: 'false',
+      presentacion: '5ml',
+      concentracion: '',
+      volumen: '',
+      es_multidosis: 'false',
+      lote: '',
+      fecha_vencimiento: '',
+    });
+
+    // Agregar hoja de instrucciones
+    const instruccionesSheet = workbook.addWorksheet('Instrucciones');
+    instruccionesSheet.getColumn(1).width = 80;
+
+    instruccionesSheet.addRow(['INSTRUCCIONES PARA CARGA MASIVA DE INVENTARIO']);
+    instruccionesSheet.getRow(1).font = { bold: true, size: 14 };
+    instruccionesSheet.addRow([]);
+    instruccionesSheet.addRow(['Campos obligatorios:']);
+    instruccionesSheet.addRow(['- sku_interno: Código único del producto (ej: FARM-001)']);
+    instruccionesSheet.addRow(['- nombre: Nombre del producto']);
+    instruccionesSheet.addRow(['- categoria: FARMACO, INSUMO, PRODUCTO_VENTA, SERVICIO, PROCEDIMIENTO']);
+    instruccionesSheet.addRow(['- unidad_medida: ml, unidad, kg, etc.']);
+    instruccionesSheet.addRow(['- precio_compra: Precio de compra en pesos']);
+    instruccionesSheet.addRow(['- precio_venta: Precio de venta en pesos']);
+    instruccionesSheet.addRow([]);
+    instruccionesSheet.addRow(['Campos opcionales:']);
+    instruccionesSheet.addRow(['- codigo_barras: Código de barras del producto']);
+    instruccionesSheet.addRow(['- descripcion: Descripción detallada']);
+    instruccionesSheet.addRow(['- stock_actual: Stock inicial (default: 0)']);
+    instruccionesSheet.addRow(['- stock_minimo: Stock mínimo (default: 0)']);
+    instruccionesSheet.addRow(['- es_farmaco: true o false (default: false)']);
+    instruccionesSheet.addRow(['- fecha_vencimiento: Formato YYYY-MM-DD (ej: 2025-12-31)']);
+    instruccionesSheet.addRow([]);
+    instruccionesSheet.addRow(['IMPORTANTE:']);
+    instruccionesSheet.addRow(['- No modifique los nombres de las columnas']);
+    instruccionesSheet.addRow(['- Si el sku_interno ya existe, se actualizará el producto']);
+    instruccionesSheet.addRow(['- Si el sku_interno no existe, se creará un producto nuevo']);
+    instruccionesSheet.addRow(['- Los valores booleanos deben ser: true o false']);
+    instruccionesSheet.addRow(['- Las fechas deben estar en formato: YYYY-MM-DD']);
+
+    // Generar buffer
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    // Configurar headers
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=plantilla_inventario.xlsx');
+
+    // Enviar archivo
+    res.send(buffer);
+  } catch (error: any) {
+    console.error('Error al generar plantilla:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Error al generar plantilla',
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * Carga masiva de inventario desde Excel/CSV
+ * POST /api/inventario/carga-masiva
+ */
+export const cargaMasiva = async (req: Request & { file?: any }, res: Response) => {
+  try {
+    const ExcelJS = require('exceljs');
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se proporcionó ningún archivo',
+      });
+    }
+
+    const { centro_id } = req.body;
+
+    if (!centro_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debe proporcionar el ID del centro',
+      });
+    }
+
+    // Leer archivo
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(req.file.buffer);
+
+    const worksheet = workbook.getWorksheet('Inventario');
+
+    if (!worksheet) {
+      return res.status(400).json({
+        success: false,
+        error: 'El archivo no contiene una hoja llamada "Inventario"',
+      });
+    }
+
+    const errores: Array<{ fila: number; errores: string[] }> = [];
+    const itemsAgregados: any[] = [];
+    const itemsActualizados: any[] = [];
+    const itemsRechazados: any[] = [];
+
+    // Procesar filas (saltar header)
+    const rows: any[] = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return; // Saltar header
+      rows.push({ row, rowNumber });
+    });
+
+    // Procesar cada fila
+    for (const { row, rowNumber } of rows) {
+      try {
+        const rowData: any = {};
+        worksheet.columns?.forEach((col: any, index: number) => {
+          rowData[col.key] = row.getCell(index + 1).value;
+        });
+
+        // Validar campos obligatorios
+        const erroresFila: string[] = [];
+
+        if (!rowData.sku_interno) erroresFila.push('sku_interno es obligatorio');
+        if (!rowData.nombre) erroresFila.push('nombre es obligatorio');
+        if (!rowData.categoria) erroresFila.push('categoria es obligatoria');
+        if (!rowData.unidad_medida) erroresFila.push('unidad_medida es obligatoria');
+        if (rowData.precio_compra === undefined || rowData.precio_compra === null) {
+          erroresFila.push('precio_compra es obligatorio');
+        }
+        if (rowData.precio_venta === undefined || rowData.precio_venta === null) {
+          erroresFila.push('precio_venta es obligatorio');
+        }
+
+        if (erroresFila.length > 0) {
+          errores.push({ fila: rowNumber, errores: erroresFila });
+          itemsRechazados.push({ fila: rowNumber, datos: rowData, errores: erroresFila });
+          continue;
+        }
+
+        // Verificar si el item existe
+        const itemExistente = await prisma.inventario.findUnique({
+          where: { sku_interno: rowData.sku_interno },
+        });
+
+        // Preparar datos
+        const datos = {
+          centro_id: parseInt(centro_id),
+          sku_interno: rowData.sku_interno,
+          codigo_barras: rowData.codigo_barras || null,
+          nombre: rowData.nombre,
+          categoria: rowData.categoria as CategoriaInventario,
+          descripcion: rowData.descripcion || null,
+          unidad_medida: rowData.unidad_medida,
+          unidad_compra: rowData.unidad_compra || null,
+          factor_conversion: rowData.factor_conversion ? parseInt(rowData.factor_conversion.toString()) : 1,
+          stock_actual: rowData.stock_actual ? parseInt(rowData.stock_actual.toString()) : 0,
+          stock_minimo: rowData.stock_minimo ? parseInt(rowData.stock_minimo.toString()) : 0,
+          precio_compra: parseFloat(rowData.precio_compra.toString()),
+          precio_venta: parseFloat(rowData.precio_venta.toString()),
+          es_farmaco: rowData.es_farmaco === 'true' || rowData.es_farmaco === true,
+          presentacion: rowData.presentacion || null,
+          concentracion: rowData.concentracion || null,
+          volumen: rowData.volumen || null,
+          es_multidosis: rowData.es_multidosis === 'true' || rowData.es_multidosis === true,
+          lote: rowData.lote || null,
+          fecha_vencimiento: rowData.fecha_vencimiento ? new Date(rowData.fecha_vencimiento) : null,
+        };
+
+        if (itemExistente) {
+          // Actualizar
+          const itemActualizado = await prisma.inventario.update({
+            where: { id: itemExistente.id },
+            data: datos,
+          });
+          itemsActualizados.push(itemActualizado);
+        } else {
+          // Crear nuevo
+          const itemNuevo = await prisma.inventario.create({
+            data: datos,
+          });
+          itemsAgregados.push(itemNuevo);
+        }
+      } catch (error: any) {
+        errores.push({
+          fila: rowNumber,
+          errores: [error.message || 'Error al procesar fila']
+        });
+        itemsRechazados.push({ fila: rowNumber, errores: [error.message] });
+      }
+    }
+
+    // Respuesta
+    res.json({
+      success: true,
+      message: 'Carga masiva completada',
+      data: {
+        total: rows.length,
+        agregados: itemsAgregados.length,
+        actualizados: itemsActualizados.length,
+        rechazados: itemsRechazados.length,
+        errores: errores,
+        items_agregados: itemsAgregados,
+        items_actualizados: itemsActualizados,
+        items_rechazados: itemsRechazados,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error en carga masiva:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Error al procesar carga masiva',
       message: error.message,
     });
   }

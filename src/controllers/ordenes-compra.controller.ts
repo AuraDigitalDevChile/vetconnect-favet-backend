@@ -134,7 +134,7 @@ export const obtener = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error al obtener orden de compra:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al obtener orden de compra',
       message: error.message,
@@ -212,7 +212,7 @@ export const crear = async (req: Request, res: Response) => {
     }
 
     console.error('Error al crear orden de compra:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al crear orden de compra',
       message: error.message,
@@ -247,7 +247,7 @@ export const cambiarEstado = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error al cambiar estado:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al cambiar estado',
       message: error.message,
@@ -281,7 +281,7 @@ export const recibirOrden = async (req: Request, res: Response) => {
       });
     }
 
-    if (orden.estado === 'RECIBIDA') {
+    if (orden.estado === EstadoOrdenCompra.RECIBIDA) {
       return res.status(400).json({
         success: false,
         error: 'Esta orden ya fue recibida',
@@ -322,7 +322,7 @@ export const recibirOrden = async (req: Request, res: Response) => {
       await tx.ordenCompra.update({
         where: { id: parseInt(id) },
         data: {
-          estado: 'RECIBIDA',
+          estado: EstadoOrdenCompra.RECIBIDA,
           fecha_recepcion: new Date(),
         },
       });
@@ -334,7 +334,7 @@ export const recibirOrden = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error al recibir orden:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al recibir orden',
       message: error.message,
@@ -360,7 +360,7 @@ export const eliminar = async (req: Request, res: Response) => {
       });
     }
 
-    if (orden.estado === 'RECIBIDA') {
+    if (orden.estado === EstadoOrdenCompra.RECIBIDA) {
       return res.status(400).json({
         success: false,
         error: 'No se puede eliminar una orden que ya fue recibida',
@@ -377,7 +377,7 @@ export const eliminar = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error al eliminar orden:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al eliminar orden',
       message: error.message,

@@ -330,64 +330,6 @@ export class PacientesController {
   }
 
   /**
-   * PATCH /api/pacientes/:id/fallecido
-   * Marcar paciente como fallecido
-   * Bloquea automáticamente notificaciones y nuevas citas
-   */
-  static async marcarFallecido(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const { fecha_fallecimiento } = req.body;
-
-      // Verificar que existe
-      const paciente = await prisma.paciente.findUnique({
-        where: { id: parseInt(id) },
-      });
-
-      if (!paciente) {
-        ApiResponseUtils.notFound(res, 'Paciente no encontrado');
-        return;
-      }
-
-      if (paciente.fallecido) {
-        ApiResponseUtils.badRequest(res, 'El paciente ya está marcado como fallecido');
-        return;
-      }
-
-      // Marcar como fallecido
-      const pacienteActualizado = await prisma.paciente.update({
-        where: { id: parseInt(id) },
-        data: {
-          fallecido: true,
-          fecha_fallecimiento: fecha_fallecimiento ? new Date(fecha_fallecimiento) : new Date(),
-          activo: false, // También desactivar
-        },
-      });
-
-      // Cancelar todas las citas futuras
-      await prisma.cita.updateMany({
-        where: {
-          paciente_id: parseInt(id),
-          fecha: { gte: new Date() },
-          estado: { notIn: ['CANCELADA', 'COMPLETADA'] },
-        },
-        data: {
-          estado: 'CANCELADA',
-        },
-      });
-
-      ApiResponseUtils.success(
-        res,
-        pacienteActualizado,
-        'Paciente marcado como fallecido. Se han cancelado todas las citas futuras.'
-      );
-    } catch (error) {
-      console.error('Error al marcar paciente como fallecido:', error);
-      ApiResponseUtils.serverError(res, 'Error al procesar solicitud');
-    }
-  }
-
-  /**
    * GET /api/pacientes/buscar
    * Búsqueda avanzada de pacientes
    */
@@ -568,7 +510,7 @@ export class PacientesController {
           },
           data: {
             estado: 'CANCELADA',
-            motivo_cancelacion: 'Paciente fallecido',
+            observaciones: 'Paciente fallecido',
           },
         });
       });

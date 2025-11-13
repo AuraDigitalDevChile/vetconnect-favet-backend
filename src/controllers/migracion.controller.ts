@@ -8,7 +8,6 @@ import csvParserService, { TipoCarga } from '../services/migracion/csv-parser.se
 import validatorService from '../services/migracion/validator.service';
 import importerService from '../services/migracion/importer.service';
 import fs from 'fs';
-import path from 'path';
 
 // Validación de parámetros
 const cargaMasivaSchema = z.object({
@@ -21,7 +20,7 @@ const cargaMasivaSchema = z.object({
  * POST /api/migracion/carga-masiva
  * Cargar datos desde CSV/Excel
  */
-export const cargaMasiva = async (req: Request, res: Response) => {
+export const cargaMasiva = async (req: Request & { file?: Express.Multer.File }, res: Response) => {
   try {
     // Validar que se subió un archivo
     if (!req.file) {
@@ -121,7 +120,7 @@ export const cargaMasiva = async (req: Request, res: Response) => {
       });
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al procesar carga masiva',
       message: error.message,
@@ -181,7 +180,7 @@ export const exportar = async (req: Request, res: Response) => {
     console.log(`   ✓ Archivo generado exitosamente`);
   } catch (error: any) {
     console.error('Error en exportación:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al exportar datos',
       message: error.message,
@@ -217,7 +216,7 @@ export const descargarPlantilla = async (req: Request, res: Response) => {
     res.send(buffer);
   } catch (error: any) {
     console.error('Error al generar plantilla:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al generar plantilla',
       message: error.message,
@@ -229,7 +228,7 @@ export const descargarPlantilla = async (req: Request, res: Response) => {
  * GET /api/migracion/logs
  * Obtener historial de cargas masivas
  */
-export const obtenerLogs = async (req: Request, res: Response) => {
+export const obtenerLogs = async (_req: Request, res: Response) => {
   try {
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
@@ -247,7 +246,7 @@ export const obtenerLogs = async (req: Request, res: Response) => {
         },
       },
       orderBy: {
-        created_at: 'desc',
+        createdAt: 'desc',
       },
       take: 50,
     });
