@@ -229,15 +229,6 @@ export class HospitalizacionesController {
               numero_ficha: true,
             },
           },
-          tutor: {
-            select: {
-              id: true,
-              nombre_completo: true,
-              rut: true,
-              telefono: true,
-              email: true,
-            },
-          },
           veterinario: {
             select: {
               id: true,
@@ -584,7 +575,7 @@ export class HospitalizacionesController {
         where: { id: Number(id) },
       });
 
-      ApiResponseUtil.success(res, 200, 'Hospitalización eliminada exitosamente');
+      ApiResponseUtil.success(res, 200, 'Hospitalización eliminada exitosamente', {});
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.eliminar:', error);
       ApiResponseUtil.error(res, 500, 'Error al eliminar hospitalización', error.message);
@@ -686,7 +677,7 @@ export class HospitalizacionesController {
         where: { id: Number(evolucionId) },
       });
 
-      ApiResponseUtil.success(res, 200, 'Evolución eliminada exitosamente');
+      ApiResponseUtil.success(res, 200, 'Evolución eliminada exitosamente', {});
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.eliminarEvolucion:', error);
       ApiResponseUtil.error(res, 500, 'Error al eliminar evolución', error.message);
@@ -796,7 +787,7 @@ export class HospitalizacionesController {
         where: { id: Number(signosId) },
       });
 
-      ApiResponseUtil.success(res, 200, 'Registro de signos vitales eliminado exitosamente');
+      ApiResponseUtil.success(res, 200, 'Registro de signos vitales eliminado exitosamente', {});
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.eliminarSignosVitales:', error);
       ApiResponseUtil.error(res, 500, 'Error al eliminar signos vitales', error.message);
@@ -977,7 +968,7 @@ export class HospitalizacionesController {
         where: { id: Number(tratamientoId) },
       });
 
-      ApiResponseUtil.success(res, 200, 'Tratamiento eliminado exitosamente');
+      ApiResponseUtil.success(res, 200, 'Tratamiento eliminado exitosamente', {});
     } catch (error: any) {
       console.error('Error en HospitalizacionesController.eliminarTratamiento:', error);
       ApiResponseUtil.error(res, 500, 'Error al eliminar tratamiento', error.message);

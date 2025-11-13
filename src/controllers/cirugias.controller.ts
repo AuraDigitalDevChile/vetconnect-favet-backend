@@ -585,11 +585,36 @@ export class CirugiasController {
         return;
       }
 
+      // Buscar hospitalización activa del paciente (requerido por schema)
+      let hospitalizacionActiva = await prisma.hospitalizacion.findFirst({
+        where: {
+          paciente_id: cirugiaExistente.paciente_id,
+          estado: 'ACTIVA',
+        },
+      });
+
+      // Si no hay hospitalización activa, crear una temporal para la cirugía
+      if (!hospitalizacionActiva) {
+        hospitalizacionActiva = await prisma.hospitalizacion.create({
+          data: {
+            centro_id: cirugiaExistente.centro_id,
+            paciente_id: cirugiaExistente.paciente_id,
+            tutor_id: cirugiaExistente.tutor_id,
+            veterinario_id: cirugiaExistente.cirujano_id,
+            fecha_ingreso: new Date(),
+            prediagnostico: `Cirugía: ${cirugiaExistente.procedimiento}`,
+            condicion: 'LEVE',
+            estado: 'ACTIVA',
+          },
+        });
+      }
+
       const signosVitales = await prisma.signosVitales.create({
         data: {
+          hospitalizacion_id: hospitalizacionActiva.id,
           cirugia_id: parseInt(id),
           fecha_registro: validatedData.fecha_hora ? new Date(validatedData.fecha_hora) : new Date(),
-          temperatura: validatedData.temperatura,
+          temperatura: validatedData.temperatura ? String(validatedData.temperatura) : null,
           frecuencia_cardiaca: validatedData.frecuencia_cardiaca,
           frecuencia_respiratoria: validatedData.frecuencia_respiratoria,
           presion_arterial_media: validatedData.presion_arterial_sistolica ? parseInt(String(validatedData.presion_arterial_sistolica)) : undefined,
@@ -778,7 +803,7 @@ export class CirugiasController {
             select: {
               id: true,
               nombre: true,
-              sku: true,
+              sku_interno: true,
               categoria: true,
               precio_venta: true,
             },
