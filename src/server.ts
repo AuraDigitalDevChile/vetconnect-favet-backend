@@ -23,13 +23,13 @@ import cirugiasRoutes from './routes/cirugias.routes';
 import inventarioRoutes from './routes/inventario.routes';
 // import serviciosRoutes from './routes/servicios.routes'; // DISABLED - Schema faltante
 import reportesRoutes from './routes/reportes.routes';
-// import migracionRoutes from './routes/migracion.routes'; // DISABLED - TypeScript errors
-// import proveedoresRoutes from './routes/proveedores.routes'; // DISABLED - TypeScript errors
-// import ordenesCompraRoutes from './routes/ordenes-compra.routes'; // DISABLED - TypeScript errors
+import migracionRoutes from './routes/migracion.routes';
+import proveedoresRoutes from './routes/proveedores.routes';
+import ordenesCompraRoutes from './routes/ordenes-compra.routes';
 import cajaRoutes from './routes/caja.routes';
 import facturacionRoutes from './routes/facturacion.routes';
-import telemedicinRoutes from './routes/telemedicina.routes';
-import boletaRoutes from './routes/boleta.routes';
+// import telemedicinRoutes from './routes/telemedicina.routes'; // DISABLED - Model not in schema
+// import boletaRoutes from './routes/boleta.routes'; // DISABLED - Model not in schema
 
 // Middleware de errores
 import { errorHandler } from './middleware/error.middleware';
@@ -105,13 +105,13 @@ app.use('/api/cirugias', cirugiasRoutes);
 app.use('/api/inventario', inventarioRoutes);
 // app.use('/api/servicios', serviciosRoutes); // DISABLED
 app.use('/api/reportes', reportesRoutes);
-// app.use('/api/migracion', migracionRoutes); // DISABLED - TypeScript errors
-// app.use('/api/proveedores', proveedoresRoutes); // DISABLED - TypeScript errors
-// app.use('/api/ordenes-compra', ordenesCompraRoutes); // DISABLED - TypeScript errors
+app.use('/api/migracion', migracionRoutes);
+app.use('/api/proveedores', proveedoresRoutes);
+app.use('/api/ordenes-compra', ordenesCompraRoutes);
 app.use('/api/caja', cajaRoutes);
 app.use('/api/facturacion', facturacionRoutes);
-app.use('/api/telemedicina', telemedicinRoutes);
-app.use('/api/boleta', boletaRoutes);
+// app.use('/api/telemedicina', telemedicinRoutes); // DISABLED - Model not in schema
+// app.use('/api/boleta', boletaRoutes); // DISABLED - Model not in schema
 
 // ==========================================
 // MANEJO DE ERRORES

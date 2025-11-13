@@ -84,14 +84,14 @@ export const reporteReservas = async (req: Request, res: Response) => {
       return res.send(buffer);
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: datos,
       total: datos.length,
     });
   } catch (error: any) {
     console.error('Error en reporte de reservas:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al generar reporte',
       message: error.message,
@@ -112,9 +112,9 @@ export const reporteServiciosPersonal = async (req: Request, res: Response) => {
     if (veterinario_id) where.veterinario_id = parseInt(veterinario_id as string);
 
     if (fecha_desde || fecha_hasta) {
-      where.fecha_atencion = {};
-      if (fecha_desde) where.fecha_atencion.gte = new Date(fecha_desde as string);
-      if (fecha_hasta) where.fecha_atencion.lte = new Date(fecha_hasta as string);
+      where.created_at = {};
+      if (fecha_desde) where.created_at.gte = new Date(fecha_desde as string);
+      if (fecha_hasta) where.created_at.lte = new Date(fecha_hasta as string);
     }
 
     const fichas = await prisma.fichaClinica.findMany({
@@ -132,14 +132,14 @@ export const reporteServiciosPersonal = async (req: Request, res: Response) => {
           },
         },
       },
-      orderBy: { fecha_atencion: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
 
     const datos = fichas.map((f) => ({
-      fecha: f.fecha_atencion.toISOString().split('T')[0],
-      veterinario: f.veterinario.nombre_completo,
-      paciente: f.paciente.nombre,
-      ficha: f.paciente.numero_ficha,
+      fecha: f.created_at.toISOString().split('T')[0],
+      veterinario: f.veterinario?.nombre_completo || 'N/A',
+      paciente: f.paciente?.nombre || 'N/A',
+      ficha: f.paciente?.numero_ficha || 'N/A',
       motivo: f.motivo_consulta || '',
       diagnostico: f.diagnostico || '',
     }));
@@ -161,14 +161,14 @@ export const reporteServiciosPersonal = async (req: Request, res: Response) => {
       return res.send(buffer);
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: datos,
       total: datos.length,
     });
   } catch (error: any) {
     console.error('Error en reporte de servicios:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al generar reporte',
       message: error.message,
@@ -238,7 +238,7 @@ export const libroVentas = async (req: Request, res: Response) => {
       return res.send(buffer);
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: datos,
       total: datos.length,
@@ -249,7 +249,7 @@ export const libroVentas = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error en libro de ventas:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al generar libro de ventas',
       message: error.message,
@@ -323,14 +323,14 @@ export const movimientosInventario = async (req: Request, res: Response) => {
       return res.send(buffer);
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: datos,
       total: datos.length,
     });
   } catch (error: any) {
     console.error('Error en reporte de movimientos:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al generar reporte',
       message: error.message,
@@ -401,7 +401,7 @@ export const stockActual = async (req: Request, res: Response) => {
       return res.send(buffer);
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: datos,
       total: datos.length,
@@ -412,7 +412,7 @@ export const stockActual = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error en reporte de stock:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al generar reporte de stock',
       message: error.message,
@@ -463,11 +463,11 @@ export const pacientesDiaHospital = async (req: Request, res: Response) => {
       ficha: h.paciente.numero_ficha,
       especie: h.paciente.especie,
       fecha_ingreso: h.fecha_ingreso.toISOString().split('T')[0],
-      dias_hospitalizacion: Math.ceil(
+      dias_hospitalizacion: h.dias_hospitalizado || Math.ceil(
         (new Date().getTime() - h.fecha_ingreso.getTime()) / (1000 * 60 * 60 * 24)
       ),
-      diagnostico: h.diagnostico_ingreso || '',
-      gravedad: h.gravedad,
+      diagnostico: h.diagnostico || '',
+      gravedad: 'N/A',
       jaula: h.jaula || '',
       veterinario: h.veterinario.nombre_completo,
       estado: h.estado,
@@ -490,14 +490,14 @@ export const pacientesDiaHospital = async (req: Request, res: Response) => {
       return res.send(buffer);
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: datos,
       total: datos.length,
     });
   } catch (error: any) {
     console.error('Error en reporte de hospitalizados:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al generar reporte',
       message: error.message,

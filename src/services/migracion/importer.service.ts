@@ -75,7 +75,7 @@ class ImporterService {
   /**
    * Importar tutores
    */
-  private async importarTutores(data: any[], centroId: number): Promise<ImportResult> {
+  private async importarTutores(data: any[], _centroId: number): Promise<ImportResult> {
     let insertedRows = 0;
     const errors: string[] = [];
 
@@ -83,19 +83,12 @@ class ImporterService {
       try {
         await prisma.tutor.create({
           data: {
-            centro_id: centroId,
             rut: row.rut || null,
-            pasaporte: row.pasaporte || null,
             nombre_completo: row.nombre_completo,
             telefono: row.telefono || null,
-            telefono_alternativo: row.telefono_alternativo || null,
             email: row.email || null,
-            email_alternativo: row.email_alternativo || null,
             direccion: row.direccion || null,
             comuna: row.comuna || null,
-            ciudad: row.ciudad || null,
-            region: row.region || null,
-            ocupacion: row.ocupacion || null,
             notas: row.notas || null,
             activo: true,
           },
@@ -171,9 +164,8 @@ class ImporterService {
         data: {
           usuario_id: usuarioId,
           accion: 'CARGA_MASIVA',
-          entidad: tipo.toUpperCase(),
-          descripcion: `Carga masiva de ${tipo}: ${result.insertedRows} insertados, ${result.failedRows} fallidos`,
-          metadata: JSON.stringify(result),
+          tabla: tipo,
+          registro_id: 0,
         },
       });
     } catch (error) {
@@ -211,14 +203,19 @@ class ImporterService {
 
       case 'tutores':
         return prisma.tutor.findMany({
-          where: centroId ? { centro_id: centroId } : undefined,
-          include: {
-            centro: {
-              select: {
-                nombre: true,
-                codigo: true,
-              },
-            },
+          where: undefined,
+          select: {
+            id: true,
+            rut: true,
+            nombre_completo: true,
+            telefono: true,
+            email: true,
+            direccion: true,
+            comuna: true,
+            notas: true,
+            activo: true,
+            created_at: true,
+            updated_at: true,
           },
         });
 

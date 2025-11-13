@@ -11,10 +11,10 @@ const router = Router();
 
 // Configurar multer para upload de archivos
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, 'uploads/temp/'); // Carpeta temporal
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, 'carga-' + uniqueSuffix + path.extname(file.originalname));
   },
@@ -25,7 +25,7 @@ const upload = multer({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10 MB máximo
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_req, file, cb) => {
     const allowedTypes = ['.csv', '.xlsx', '.xls'];
     const ext = path.extname(file.originalname).toLowerCase();
 

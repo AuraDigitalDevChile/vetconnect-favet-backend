@@ -100,13 +100,13 @@ export const obtener = async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: proveedor,
     });
   } catch (error: any) {
     console.error('Error al obtener proveedor:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al obtener proveedor',
       message: error.message,
@@ -137,7 +137,7 @@ export const crear = async (req: Request, res: Response) => {
       data: datos,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Proveedor creado exitosamente',
       data: proveedor,
@@ -152,7 +152,7 @@ export const crear = async (req: Request, res: Response) => {
     }
 
     console.error('Error al crear proveedor:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al crear proveedor',
       message: error.message,
@@ -198,7 +198,7 @@ export const actualizar = async (req: Request, res: Response) => {
       data: datos,
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Proveedor actualizado exitosamente',
       data: proveedor,
@@ -213,7 +213,7 @@ export const actualizar = async (req: Request, res: Response) => {
     }
 
     console.error('Error al actualizar proveedor:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al actualizar proveedor',
       message: error.message,
@@ -259,13 +259,13 @@ export const eliminar = async (req: Request, res: Response) => {
       data: { activo: false },
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Proveedor eliminado exitosamente',
     });
   } catch (error: any) {
     console.error('Error al eliminar proveedor:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Error al eliminar proveedor',
       message: error.message,
