@@ -26,8 +26,12 @@ export const listar = async (req: Request, res: Response) => {
         skip,
         take: parseInt(limit as string),
         include: {
-          paciente: { select: { nombre: true } },
-          ficha: { select: { fecha_consulta: true } },
+          ficha_clinica: {
+            select: {
+              fecha_consulta: true,
+              paciente: { select: { nombre: true } }
+            }
+          },
         },
         orderBy: { created_at: 'desc' },
       }),
@@ -60,8 +64,11 @@ export const obtener = async (req: Request, res: Response) => {
     const receta = await prisma.receta.findUnique({
       where: { id: parseInt(id) },
       include: {
-        paciente: true,
-        ficha: true,
+        ficha_clinica: {
+          include: {
+            paciente: true,
+          }
+        },
       },
     });
 
@@ -69,9 +76,9 @@ export const obtener = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Receta no encontrada' });
     }
 
-    res.json({ success: true, data: receta });
+    return res.json({ success: true, data: receta });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -80,15 +87,13 @@ export const obtener = async (req: Request, res: Response) => {
  */
 export const crear = async (req: Request, res: Response) => {
   try {
-    const { paciente_id, ficha_id, medicamentos, indicaciones, duracion_tratamiento } = req.body;
+    const { ficha_clinica_id, contenido, archivo_pdf_url } = req.body;
 
     const receta = await prisma.receta.create({
       data: {
-        paciente: { connect: { id: paciente_id } },
-        ficha: ficha_id ? { connect: { id: ficha_id } } : undefined,
-        medicamentos,
-        indicaciones,
-        duracion_tratamiento,
+        ficha_clinica: { connect: { id: ficha_clinica_id } },
+        contenido,
+        archivo_pdf_url,
       },
     });
 
@@ -104,14 +109,13 @@ export const crear = async (req: Request, res: Response) => {
 export const actualizar = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { medicamentos, indicaciones, duracion_tratamiento } = req.body;
+    const { contenido, archivo_pdf_url } = req.body;
 
     const receta = await prisma.receta.update({
       where: { id: parseInt(id) },
       data: {
-        medicamentos,
-        indicaciones,
-        duracion_tratamiento,
+        contenido,
+        archivo_pdf_url,
       },
     });
 

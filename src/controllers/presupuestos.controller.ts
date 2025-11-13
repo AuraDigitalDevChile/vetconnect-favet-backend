@@ -30,7 +30,6 @@ export const listar = async (req: Request, res: Response) => {
         include: {
           paciente: { select: { nombre: true } },
           tutor: { select: { nombre_completo: true } },
-          usuario: { select: { nombre_completo: true } },
           items: true,
         },
         orderBy: { created_at: 'desc' },
@@ -66,7 +65,6 @@ export const obtener = async (req: Request, res: Response) => {
       include: {
         paciente: true,
         tutor: true,
-        usuario: { select: { nombre_completo: true } },
         items: true,
       },
     });
@@ -75,9 +73,9 @@ export const obtener = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Presupuesto no encontrado' });
     }
 
-    res.json({ success: true, data: presupuesto });
+    return res.json({ success: true, data: presupuesto });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -86,16 +84,22 @@ export const obtener = async (req: Request, res: Response) => {
  */
 export const crear = async (req: Request, res: Response) => {
   try {
-    const { centro_id, paciente_id, tutor_id, usuario_id, items, observaciones } = req.body;
+    const { paciente_id, tutor_id, numero_presupuesto, descripcion, descuento = 0, items, condiciones } = req.body;
+
+    // Calcular totales
+    const subtotal = items.reduce((sum: number, item: any) => sum + item.subtotal, 0);
+    const total = subtotal - descuento;
 
     const presupuesto = await prisma.presupuesto.create({
       data: {
-        centro: { connect: { id: centro_id } },
         paciente: { connect: { id: paciente_id } },
-        tutor: tutor_id ? { connect: { id: tutor_id } } : undefined,
-        usuario: { connect: { id: usuario_id } },
-        observaciones,
-        estado: 'PENDIENTE',
+        tutor: { connect: { id: tutor_id } },
+        numero_presupuesto,
+        descripcion,
+        subtotal,
+        descuento,
+        total,
+        condiciones,
         items: {
           create: items.map((item: any) => ({
             tipo_item: item.tipo_item,
@@ -111,16 +115,6 @@ export const crear = async (req: Request, res: Response) => {
       },
     });
 
-    // Calcular totales
-    const subtotal = items.reduce((sum: number, item: any) => sum + item.subtotal, 0);
-    const iva = subtotal * 0.19;
-    const total = subtotal + iva;
-
-    await prisma.presupuesto.update({
-      where: { id: presupuesto.id },
-      data: { subtotal, iva, total },
-    });
-
     res.status(201).json({ success: true, data: presupuesto });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -133,11 +127,11 @@ export const crear = async (req: Request, res: Response) => {
 export const actualizarEstado = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { estado } = req.body;
+    const { aprobado } = req.body;
 
     const presupuesto = await prisma.presupuesto.update({
       where: { id: parseInt(id) },
-      data: { estado },
+      data: { aprobado },
     });
 
     res.json({ success: true, data: presupuesto });

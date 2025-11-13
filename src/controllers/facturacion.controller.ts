@@ -618,7 +618,7 @@ export class FacturacionController {
       }
 
       // Calcular edad del paciente
-      const edadPaciente = factura.paciente.fecha_nacimiento
+      const edadPaciente = factura.paciente?.fecha_nacimiento
         ? calcularEdad(factura.paciente.fecha_nacimiento)
         : 'N/A';
 
@@ -628,14 +628,14 @@ export class FacturacionController {
         centroRut: factura.centro.rut || 'N/A',
         centroDireccion: factura.centro.direccion || 'N/A',
         centroTelefono: factura.centro.telefono || 'N/A',
-        tutorNombre: factura.tutor.nombre_completo,
-        tutorDireccion: factura.tutor.direccion || 'N/A',
-        tutorTelefono: factura.tutor.telefono || 'N/A',
-        pacienteNombre: factura.paciente.nombre,
-        pacienteEspecie: factura.paciente.especie,
-        pacienteRaza: factura.paciente.raza || 'N/A',
+        tutorNombre: factura.tutor?.nombre_completo || 'N/A',
+        tutorDireccion: factura.tutor?.direccion || 'N/A',
+        tutorTelefono: factura.tutor?.telefono || 'N/A',
+        pacienteNombre: factura.paciente?.nombre || 'N/A',
+        pacienteEspecie: factura.paciente?.especie || 'N/A',
+        pacienteRaza: factura.paciente?.raza || 'N/A',
         pacienteEdad: edadPaciente,
-        pacienteId: factura.paciente.numero_ficha,
+        pacienteId: factura.paciente?.numero_ficha || 'N/A',
         numeroFactura: factura.numero_factura,
         tipoDocumento: factura.tipo_documento,
         fechaEmision: factura.fecha_emision.toLocaleDateString('es-CL', {

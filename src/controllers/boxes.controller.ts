@@ -84,9 +84,9 @@ export const obtener = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Box no encontrado' });
     }
 
-    res.json({ success: true, data: box });
+    return res.json({ success: true, data: box });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 

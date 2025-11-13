@@ -73,9 +73,9 @@ export const obtener = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Convenio no encontrado' });
     }
 
-    res.json({ success: true, data: convenio });
+    return res.json({ success: true, data: convenio });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -84,16 +84,25 @@ export const obtener = async (req: Request, res: Response) => {
  */
 export const crear = async (req: Request, res: Response) => {
   try {
-    const { centro_id, nombre, descripcion, descuento_porcentaje, fecha_inicio, fecha_fin } = req.body;
+    const {
+      nombre,
+      descripcion,
+      descuento_examenes = 0,
+      descuento_procedimientos = 0,
+      descuento_productos = 0,
+      descuento_cirugias = 0,
+      descuento_hospitalizacion = 0
+    } = req.body;
 
     const convenio = await prisma.convenio.create({
       data: {
-        centro: { connect: { id: centro_id } },
         nombre,
         descripcion,
-        descuento_porcentaje,
-        fecha_inicio: fecha_inicio ? new Date(fecha_inicio) : undefined,
-        fecha_fin: fecha_fin ? new Date(fecha_fin) : undefined,
+        descuento_examenes,
+        descuento_procedimientos,
+        descuento_productos,
+        descuento_cirugias,
+        descuento_hospitalizacion,
         activo: true,
       },
     });
@@ -110,16 +119,27 @@ export const crear = async (req: Request, res: Response) => {
 export const actualizar = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, descuento_porcentaje, fecha_inicio, fecha_fin, activo } = req.body;
+    const {
+      nombre,
+      descripcion,
+      descuento_examenes,
+      descuento_procedimientos,
+      descuento_productos,
+      descuento_cirugias,
+      descuento_hospitalizacion,
+      activo
+    } = req.body;
 
     const convenio = await prisma.convenio.update({
       where: { id: parseInt(id) },
       data: {
         nombre,
         descripcion,
-        descuento_porcentaje,
-        fecha_inicio: fecha_inicio ? new Date(fecha_inicio) : undefined,
-        fecha_fin: fecha_fin ? new Date(fecha_fin) : undefined,
+        descuento_examenes,
+        descuento_procedimientos,
+        descuento_productos,
+        descuento_cirugias,
+        descuento_hospitalizacion,
         activo,
       },
     });
@@ -136,12 +156,14 @@ export const actualizar = async (req: Request, res: Response) => {
 export const asignarPaciente = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { paciente_id } = req.body;
+    const { paciente_id, fecha_inicio, fecha_fin } = req.body;
 
     const asignacion = await prisma.convenioPaciente.create({
       data: {
         convenio: { connect: { id: parseInt(id) } },
         paciente: { connect: { id: paciente_id } },
+        fecha_inicio: fecha_inicio ? new Date(fecha_inicio) : new Date(),
+        fecha_fin: fecha_fin ? new Date(fecha_fin) : undefined,
       },
     });
 

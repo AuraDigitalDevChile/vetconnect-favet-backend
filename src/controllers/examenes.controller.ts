@@ -28,7 +28,7 @@ export const listar = async (req: Request, res: Response) => {
         take: parseInt(limit as string),
         include: {
           paciente: { select: { nombre: true } },
-          ficha: { select: { fecha_consulta: true } },
+          ficha_clinica: { select: { fecha_consulta: true } },
         },
         orderBy: { created_at: 'desc' },
       }),
@@ -62,7 +62,7 @@ export const obtener = async (req: Request, res: Response) => {
       where: { id: parseInt(id) },
       include: {
         paciente: true,
-        ficha: true,
+        ficha_clinica: true,
       },
     });
 
@@ -70,9 +70,9 @@ export const obtener = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Examen no encontrado' });
     }
 
-    res.json({ success: true, data: examen });
+    return res.json({ success: true, data: examen });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -81,16 +81,17 @@ export const obtener = async (req: Request, res: Response) => {
  */
 export const crear = async (req: Request, res: Response) => {
   try {
-    const { paciente_id, ficha_id, tipo_examen, descripcion, indicaciones } = req.body;
+    const { paciente_id, ficha_clinica_id, tipo, nombre, descripcion, precio } = req.body;
 
     const examen = await prisma.examen.create({
       data: {
         paciente: { connect: { id: paciente_id } },
-        ficha: ficha_id ? { connect: { id: ficha_id } } : undefined,
-        tipo_examen,
+        ficha_clinica: ficha_clinica_id ? { connect: { id: ficha_clinica_id } } : undefined,
+        tipo,
+        nombre,
         descripcion,
-        indicaciones,
-        estado: 'PENDIENTE',
+        precio,
+        estado: 'SOLICITADO',
       },
     });
 
@@ -106,16 +107,16 @@ export const crear = async (req: Request, res: Response) => {
 export const cargarResultados = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { resultados, observaciones, archivo_url } = req.body;
+    const { resultado_texto, observaciones, resultado_archivo_url } = req.body;
 
     const examen = await prisma.examen.update({
       where: { id: parseInt(id) },
       data: {
-        resultados,
+        resultado_texto,
         observaciones,
-        archivo_url,
+        resultado_archivo_url,
         estado: 'COMPLETADO',
-        fecha_resultado: new Date(),
+        fecha_realizacion: new Date(),
       },
     });
 
