@@ -684,8 +684,8 @@ model ItemOrdenCompra {
 model Factura {
   id                 Int                @id @default(autoincrement())
   centro_id          Int
-  paciente_id        Int
-  tutor_id           Int
+  paciente_id        Int?
+  tutor_id           Int?
   usuario_id         Int
   numero_factura     String             @unique @db.VarChar(50)
   tipo_documento     TipoDocumento
@@ -705,8 +705,8 @@ model Factura {
   updated_at         DateTime           @updatedAt
   boleta_electronica BoletaElectronica?
   centro             Centro             @relation(fields: [centro_id], references: [id], onDelete: Cascade)
-  paciente           Paciente           @relation(fields: [paciente_id], references: [id], onDelete: Cascade)
-  tutor              Tutor              @relation(fields: [tutor_id], references: [id], onDelete: Cascade)
+  paciente           Paciente?          @relation(fields: [paciente_id], references: [id], onDelete: Cascade)
+  tutor              Tutor?             @relation(fields: [tutor_id], references: [id], onDelete: Cascade)
   usuario            Usuario            @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
   items              ItemFactura[]
 

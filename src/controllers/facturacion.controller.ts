@@ -53,6 +53,26 @@ const cambiarEstadoSchema = z.object({
   fecha_pago: z.string().datetime().optional(),
 });
 
+// Schema específico para POS (con paciente y tutor opcionales)
+const posVentaSchema = z.object({
+  centro_id: z.number().int().positive(),
+  paciente_id: z.number().int().positive().optional(),
+  tutor_id: z.number().int().positive().optional(),
+  usuario_id: z.number().int().positive(),
+  numero_factura: z.string().min(1).max(50),
+  tipo_documento: z.enum(['BOLETA', 'FACTURA']),
+  fecha_vencimiento: z.string().datetime().optional().nullable(),
+  subtotal: z.number().positive(),
+  descuento: z.number().min(0).default(0),
+  iva: z.number().min(0).default(0),
+  total: z.number().positive(),
+  metodo_pago: z.enum(['EFECTIVO', 'TARJETA_DEBITO', 'TARJETA_CREDITO', 'TRANSFERENCIA']),
+  estado: z.enum(['PENDIENTE', 'PAGADA']).default('PAGADA'),
+  observaciones: z.string().optional().nullable(),
+  folio_sii: z.string().max(50).optional().nullable(),
+  items: z.array(itemFacturaSchema).min(1),
+});
+
 export class FacturacionController {
   /**
    * Listar facturas con filtros
@@ -715,29 +735,42 @@ export class FacturacionController {
    */
   static async registrarVentaPOS(req: Request, res: Response): Promise<void> {
     try {
-      const datos = facturaSchema.parse(req.body);
+      const datos = posVentaSchema.parse(req.body);
 
       // Crear factura con items en una transacción
       const factura = await prisma.$transaction(async (tx) => {
+        // Construir data object dinámicamente para omitir campos opcionales cuando son undefined
+        const facturaData: any = {
+          centro: { connect: { id: datos.centro_id } },
+          usuario: { connect: { id: datos.usuario_id } },
+          numero_factura: datos.numero_factura,
+          tipo_documento: datos.tipo_documento,
+          fecha_vencimiento: datos.fecha_vencimiento ? new Date(datos.fecha_vencimiento) : null,
+          subtotal: datos.subtotal,
+          descuento: datos.descuento,
+          iva: datos.iva,
+          total: datos.total,
+          metodo_pago: datos.metodo_pago,
+          estado: datos.estado,
+        };
+
+        // Solo agregar paciente y tutor si están definidos
+        if (datos.paciente_id) {
+          facturaData.paciente = { connect: { id: datos.paciente_id } };
+        }
+        if (datos.tutor_id) {
+          facturaData.tutor = { connect: { id: datos.tutor_id } };
+        }
+        if (datos.observaciones) {
+          facturaData.observaciones = datos.observaciones;
+        }
+        if (datos.folio_sii) {
+          facturaData.folio_sii = datos.folio_sii;
+        }
+
         // Crear factura
         const nuevaFactura = await tx.factura.create({
-          data: {
-            centro_id: datos.centro_id,
-            paciente_id: datos.paciente_id,
-            tutor_id: datos.tutor_id,
-            usuario_id: datos.usuario_id,
-            numero_factura: datos.numero_factura,
-            tipo_documento: datos.tipo_documento,
-            fecha_vencimiento: datos.fecha_vencimiento ? new Date(datos.fecha_vencimiento) : null,
-            subtotal: datos.subtotal,
-            descuento: datos.descuento,
-            iva: datos.iva,
-            total: datos.total,
-            metodo_pago: datos.metodo_pago,
-            estado: datos.estado,
-            observaciones: datos.observaciones,
-            folio_sii: datos.folio_sii,
-          },
+          data: facturaData,
         });
 
         // Crear items

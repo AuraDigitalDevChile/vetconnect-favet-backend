@@ -22,7 +22,7 @@ import hospitalizacionRoutes from './routes/hospitalizacion.routes';
 import cirugiasRoutes from './routes/cirugias.routes';
 import inventarioRoutes from './routes/inventario.routes';
 // import serviciosRoutes from './routes/servicios.routes'; // DISABLED - Schema faltante
-// import reportesRoutes from './routes/reportes.routes'; // DISABLED - TypeScript errors
+import reportesRoutes from './routes/reportes.routes';
 // import migracionRoutes from './routes/migracion.routes'; // DISABLED - TypeScript errors
 // import proveedoresRoutes from './routes/proveedores.routes'; // DISABLED - TypeScript errors
 // import ordenesCompraRoutes from './routes/ordenes-compra.routes'; // DISABLED - TypeScript errors
@@ -104,7 +104,7 @@ app.use('/api/hospitalizacion', hospitalizacionRoutes);
 app.use('/api/cirugias', cirugiasRoutes);
 app.use('/api/inventario', inventarioRoutes);
 // app.use('/api/servicios', serviciosRoutes); // DISABLED
-// app.use('/api/reportes', reportesRoutes); // DISABLED - TypeScript errors
+app.use('/api/reportes', reportesRoutes);
 // app.use('/api/migracion', migracionRoutes); // DISABLED - TypeScript errors
 // app.use('/api/proveedores', proveedoresRoutes); // DISABLED - TypeScript errors
 // app.use('/api/ordenes-compra', ordenesCompraRoutes); // DISABLED - TypeScript errors
