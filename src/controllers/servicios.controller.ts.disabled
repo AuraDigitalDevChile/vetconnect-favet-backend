@@ -1,0 +1,528 @@
+/**
+ * SERVICIOS CONTROLLER
+ *
+ * Gestión de servicios veterinarios:
+ * - CRUD de servicios
+ * - Asociación con personal
+ * - Asociación con insumos
+ * - Precios y descuentos
+ */
+
+import { Request, Response } from 'express';
+import { z } from 'zod';
+import prisma from '../config/database';
+import { ApiResponseUtil } from '../utils/api-response.util';
+
+// ============================================
+// SCHEMAS DE VALIDACIÓN
+// ============================================
+
+const createServicioSchema = z.object({
+  centro_id: z.number().int().positive(),
+  nombre: z.string().min(1, 'Nombre es requerido'),
+  descripcion: z.string().optional(),
+  tipo: z.enum(['CONSULTA', 'PROCEDIMIENTO', 'CIRUGIA', 'EXAMEN', 'VACUNACION', 'HOSPITALIZACION', 'OTRO']),
+  duracion_minutos: z.number().int().positive().default(30),
+  precio: z.number().min(0),
+  activo: z.boolean().default(true),
+
+  // IDs de personal asociado
+  veterinarios_ids: z.array(z.number().int().positive()).optional(),
+
+  // IDs de insumos asociados (con cantidad)
+  insumos: z.array(z.object({
+    inventario_id: z.number().int().positive(),
+    cantidad: z.number().positive(),
+  })).optional(),
+});
+
+const updateServicioSchema = createServicioSchema.partial().extend({
+  veterinarios_ids: z.array(z.number().int().positive()).optional(),
+  insumos: z.array(z.object({
+    inventario_id: z.number().int().positive(),
+    cantidad: z.number().positive(),
+  })).optional(),
+});
+
+// ============================================
+// GET /api/servicios
+// Listar servicios
+// ============================================
+
+export async function listarServicios(req: Request, res: Response) {
+  try {
+    const {
+      centro_id,
+      tipo,
+      activo,
+      buscar,
+    } = req.query;
+
+    // Construir filtros
+    const where: any = {};
+
+    if (centro_id) {
+      where.centro_id = parseInt(centro_id as string);
+    }
+
+    if (tipo) {
+      where.tipo = tipo;
+    }
+
+    if (activo !== undefined) {
+      where.activo = activo === 'true';
+    }
+
+    if (buscar) {
+      where.OR = [
+        { nombre: { contains: buscar as string, mode: 'insensitive' } },
+        { descripcion: { contains: buscar as string, mode: 'insensitive' } },
+      ];
+    }
+
+    const servicios = await prisma.servicio.findMany({
+      where,
+      include: {
+        centro: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+        veterinarios: {
+          select: {
+            id: true,
+            nombre_completo: true,
+            email: true,
+          },
+        },
+        insumos_servicio: {
+          include: {
+            inventario: {
+              select: {
+                id: true,
+                nombre: true,
+                precio_venta: true,
+                stock_actual: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        nombre: 'asc',
+      },
+    });
+
+    return ApiResponseUtil.success(
+      res,
+      200,
+      'Servicios obtenidos exitosamente',
+      servicios
+    );
+  } catch (error: any) {
+    console.error('Error en ServiciosController.listarServicios:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al listar servicios',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// GET /api/servicios/:id
+// Obtener detalle de un servicio
+// ============================================
+
+export async function obtenerServicio(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+
+    const servicio = await prisma.servicio.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        centro: true,
+        veterinarios: {
+          select: {
+            id: true,
+            nombre_completo: true,
+            email: true,
+            rol: true,
+          },
+        },
+        insumos_servicio: {
+          include: {
+            inventario: {
+              select: {
+                id: true,
+                nombre: true,
+                sku: true,
+                precio_venta: true,
+                stock_actual: true,
+                unidad_uso: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!servicio) {
+      return ApiResponseUtil.error(res, 404, 'Servicio no encontrado');
+    }
+
+    return ApiResponseUtil.success(
+      res,
+      200,
+      'Servicio obtenido exitosamente',
+      servicio
+    );
+  } catch (error: any) {
+    console.error('Error en ServiciosController.obtenerServicio:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al obtener servicio',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// POST /api/servicios
+// Crear nuevo servicio
+// ============================================
+
+export async function crearServicio(req: Request, res: Response) {
+  try {
+    const validatedData = createServicioSchema.parse(req.body);
+
+    const servicio = await prisma.$transaction(async (tx) => {
+      // Crear servicio base
+      const nuevoServicio = await tx.servicio.create({
+        data: {
+          centro_id: validatedData.centro_id,
+          nombre: validatedData.nombre,
+          descripcion: validatedData.descripcion,
+          tipo: validatedData.tipo,
+          duracion_minutos: validatedData.duracion_minutos,
+          precio: validatedData.precio,
+          activo: validatedData.activo,
+        },
+      });
+
+      // Asociar veterinarios si se proporcionaron
+      if (validatedData.veterinarios_ids && validatedData.veterinarios_ids.length > 0) {
+        await tx.servicio.update({
+          where: { id: nuevoServicio.id },
+          data: {
+            veterinarios: {
+              connect: validatedData.veterinarios_ids.map((id) => ({ id })),
+            },
+          },
+        });
+      }
+
+      // Asociar insumos si se proporcionaron
+      if (validatedData.insumos && validatedData.insumos.length > 0) {
+        await tx.insumoServicio.createMany({
+          data: validatedData.insumos.map((insumo) => ({
+            servicio_id: nuevoServicio.id,
+            inventario_id: insumo.inventario_id,
+            cantidad: insumo.cantidad,
+          })),
+        });
+      }
+
+      // Retornar servicio completo
+      return await tx.servicio.findUnique({
+        where: { id: nuevoServicio.id },
+        include: {
+          centro: true,
+          veterinarios: true,
+          insumos_servicio: {
+            include: {
+              inventario: true,
+            },
+          },
+        },
+      });
+    });
+
+    return ApiResponseUtil.success(
+      res,
+      201,
+      'Servicio creado exitosamente',
+      servicio
+    );
+  } catch (error: any) {
+    console.error('Error en ServiciosController.crearServicio:', error);
+
+    if (error instanceof z.ZodError) {
+      return ApiResponseUtil.error(
+        res,
+        400,
+        'Datos de entrada inválidos',
+        error.errors
+      );
+    }
+
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al crear servicio',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// PUT /api/servicios/:id
+// Actualizar servicio
+// ============================================
+
+export async function actualizarServicio(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const validatedData = updateServicioSchema.parse(req.body);
+
+    const servicioExistente = await prisma.servicio.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!servicioExistente) {
+      return ApiResponseUtil.error(res, 404, 'Servicio no encontrado');
+    }
+
+    const servicio = await prisma.$transaction(async (tx) => {
+      // Actualizar servicio base
+      const { veterinarios_ids, insumos, ...servicioData } = validatedData;
+
+      const servicioActualizado = await tx.servicio.update({
+        where: { id: parseInt(id) },
+        data: servicioData,
+      });
+
+      // Actualizar veterinarios si se proporcionaron
+      if (veterinarios_ids !== undefined) {
+        // Desconectar todos los veterinarios actuales
+        await tx.servicio.update({
+          where: { id: parseInt(id) },
+          data: {
+            veterinarios: {
+              set: [],
+            },
+          },
+        });
+
+        // Conectar nuevos veterinarios
+        if (veterinarios_ids.length > 0) {
+          await tx.servicio.update({
+            where: { id: parseInt(id) },
+            data: {
+              veterinarios: {
+                connect: veterinarios_ids.map((vetId) => ({ id: vetId })),
+              },
+            },
+          });
+        }
+      }
+
+      // Actualizar insumos si se proporcionaron
+      if (insumos !== undefined) {
+        // Eliminar todos los insumos actuales
+        await tx.insumoServicio.deleteMany({
+          where: { servicio_id: parseInt(id) },
+        });
+
+        // Crear nuevos insumos
+        if (insumos.length > 0) {
+          await tx.insumoServicio.createMany({
+            data: insumos.map((insumo) => ({
+              servicio_id: parseInt(id),
+              inventario_id: insumo.inventario_id,
+              cantidad: insumo.cantidad,
+            })),
+          });
+        }
+      }
+
+      // Retornar servicio completo
+      return await tx.servicio.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+          centro: true,
+          veterinarios: true,
+          insumos_servicio: {
+            include: {
+              inventario: true,
+            },
+          },
+        },
+      });
+    });
+
+    return ApiResponseUtil.success(
+      res,
+      200,
+      'Servicio actualizado exitosamente',
+      servicio
+    );
+  } catch (error: any) {
+    console.error('Error en ServiciosController.actualizarServicio:', error);
+
+    if (error instanceof z.ZodError) {
+      return ApiResponseUtil.error(
+        res,
+        400,
+        'Datos de entrada inválidos',
+        error.errors
+      );
+    }
+
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al actualizar servicio',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// DELETE /api/servicios/:id
+// Eliminar servicio (soft delete - marcar como inactivo)
+// ============================================
+
+export async function eliminarServicio(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+
+    const servicio = await prisma.servicio.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!servicio) {
+      return ApiResponseUtil.error(res, 404, 'Servicio no encontrado');
+    }
+
+    // Marcar como inactivo en lugar de eliminar
+    await prisma.servicio.update({
+      where: { id: parseInt(id) },
+      data: { activo: false },
+    });
+
+    return ApiResponseUtil.success(res, 200, 'Servicio desactivado exitosamente');
+  } catch (error: any) {
+    console.error('Error en ServiciosController.eliminarServicio:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al eliminar servicio',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// POST /api/servicios/:id/aplicar
+// Aplicar servicio a una consulta/procedimiento
+// (descuenta insumos del inventario)
+// ============================================
+
+export async function aplicarServicio(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const { usuario_id, ficha_clinica_id } = req.body;
+
+    if (!usuario_id) {
+      return ApiResponseUtil.error(res, 400, 'usuario_id es requerido');
+    }
+
+    const servicio = await prisma.servicio.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        insumos_servicio: {
+          include: {
+            inventario: true,
+          },
+        },
+      },
+    });
+
+    if (!servicio) {
+      return ApiResponseUtil.error(res, 404, 'Servicio no encontrado');
+    }
+
+    // Descontar insumos del inventario
+    const movimientos = await prisma.$transaction(async (tx) => {
+      const movimientosCreados = [];
+
+      for (const insumo of servicio.insumos_servicio) {
+        // Verificar stock suficiente
+        if (insumo.inventario.stock_actual < insumo.cantidad) {
+          throw new Error(
+            `Stock insuficiente de ${insumo.inventario.nombre}. Disponible: ${insumo.inventario.stock_actual}, Requerido: ${insumo.cantidad}`
+          );
+        }
+
+        // Registrar movimiento
+        const movimiento = await tx.movimientoInventario.create({
+          data: {
+            inventario_id: insumo.inventario_id,
+            tipo: 'SALIDA_CONSUMO',
+            cantidad: insumo.cantidad,
+            stock_anterior: insumo.inventario.stock_actual,
+            stock_nuevo: insumo.inventario.stock_actual - insumo.cantidad,
+            usuario_id: usuario_id,
+            motivo: `Aplicación de servicio: ${servicio.nombre}`,
+          },
+        });
+
+        // Actualizar stock
+        await tx.inventario.update({
+          where: { id: insumo.inventario_id },
+          data: {
+            stock_actual: {
+              decrement: insumo.cantidad,
+            },
+          },
+        });
+
+        movimientosCreados.push(movimiento);
+      }
+
+      // Registrar uso de insumos si hay ficha clínica
+      if (ficha_clinica_id) {
+        for (const insumo of servicio.insumos_servicio) {
+          await tx.insumoUtilizado.create({
+            data: {
+              ficha_clinica_id: ficha_clinica_id,
+              inventario_id: insumo.inventario_id,
+              cantidad: insumo.cantidad,
+            },
+          });
+        }
+      }
+
+      return movimientosCreados;
+    });
+
+    return ApiResponseUtil.success(
+      res,
+      200,
+      'Servicio aplicado exitosamente',
+      { servicio, movimientos }
+    );
+  } catch (error: any) {
+    console.error('Error en ServiciosController.aplicarServicio:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      error.message || 'Error al aplicar servicio',
+      error.message
+    );
+  }
+}

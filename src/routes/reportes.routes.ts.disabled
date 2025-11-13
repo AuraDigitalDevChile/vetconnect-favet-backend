@@ -1,0 +1,19 @@
+import { Router } from 'express';
+import * as reportesController from '../controllers/reportes.controller';
+import { authMiddleware } from '../middleware/authMiddleware';
+
+const router = Router();
+
+// Todas las rutas requieren autenticación
+router.use(authMiddleware);
+
+// Rutas de reportes
+router.get('/reservas', reportesController.reporteReservas);
+router.get('/servicios-personal', reportesController.reporteServiciosPersonal);
+router.get('/libro-ventas', reportesController.reporteLibroVentas);
+router.get('/movimientos-inventario', reportesController.reporteMovimientosInventario);
+router.get('/stock-actual', reportesController.reporteStockActual);
+router.get('/pacientes-hospitalizados', reportesController.reportePacientesHospital);
+router.get('/dashboard', reportesController.reporteDashboard);
+
+export default router;

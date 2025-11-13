@@ -1,0 +1,458 @@
+/**
+ * CARGA MASIVA CONTROLLER
+ *
+ * Carga masiva de datos desde CSV/JSON:
+ * - Tutores
+ * - Pacientes
+ * - Servicios
+ * - Inventario
+ * - Historiales clínicos
+ */
+
+import { Request, Response } from 'express';
+import { z } from 'zod';
+import prisma from '../config/database';
+import { ApiResponseUtil } from '../utils/api-response.util';
+
+// ============================================
+// SCHEMAS DE VALIDACIÓN
+// ============================================
+
+const tutorSchema = z.object({
+  rut: z.string().min(1),
+  nombre_completo: z.string().min(1),
+  telefono: z.string().optional(),
+  email: z.string().email().optional(),
+  direccion: z.string().optional(),
+  comuna: z.string().optional(),
+});
+
+const pacienteSchema = z.object({
+  nombre: z.string().min(1),
+  especie: z.enum(['CANINO', 'FELINO', 'EXOTICO', 'EQUINO', 'BOVINO', 'OTRO']),
+  raza: z.string().optional(),
+  edad_anos: z.number().min(0).optional(),
+  sexo: z.enum(['MACHO', 'HEMBRA']).optional(),
+  peso_kg: z.number().min(0).optional(),
+  chip: z.string().optional(),
+  color: z.string().optional(),
+  estado_reproductivo: z.enum(['ENTERO', 'CASTRADO', 'ESTERILIZADA', 'DESCONOCIDO']).optional(),
+  tutor_rut: z.string().min(1), // Para vincular con tutor
+  centro_id: z.number().int().positive(),
+});
+
+const servicioSchema = z.object({
+  nombre: z.string().min(1),
+  tipo: z.enum(['CONSULTA', 'PROCEDIMIENTO', 'CIRUGIA', 'EXAMEN', 'VACUNACION', 'HOSPITALIZACION', 'OTRO']),
+  precio: z.number().min(0),
+  duracion_minutos: z.number().int().positive().default(30),
+  descripcion: z.string().optional(),
+  centro_id: z.number().int().positive(),
+});
+
+const inventarioSchema = z.object({
+  nombre: z.string().min(1),
+  categoria: z.enum(['FARMACO', 'INSUMO', 'PRODUCTO_VENTA', 'EQUIPAMIENTO', 'OTRO']),
+  sku: z.string().optional(),
+  codigo_barra: z.string().optional(),
+  stock_actual: z.number().min(0).default(0),
+  stock_minimo: z.number().min(0).default(0),
+  precio_compra: z.number().min(0).optional(),
+  precio_venta: z.number().min(0).optional(),
+  centro_id: z.number().int().positive(),
+});
+
+// ============================================
+// POST /api/carga-masiva/tutores
+// Carga masiva de tutores
+// ============================================
+
+export async function cargarTutores(req: Request, res: Response) {
+  try {
+    const { tutores, centro_id } = req.body;
+
+    if (!Array.isArray(tutores) || tutores.length === 0) {
+      return ApiResponseUtil.error(res, 400, 'Se requiere un array de tutores');
+    }
+
+    // Validar todos los tutores
+    const tutoresValidados = tutores.map((tutor, index) => {
+      try {
+        return tutorSchema.parse(tutor);
+      } catch (error: any) {
+        throw new Error(`Error en tutor ${index + 1}: ${error.message}`);
+      }
+    });
+
+    // Insertar tutores (ignorar duplicados por RUT)
+    const resultados = await prisma.$transaction(async (tx) => {
+      const creados = [];
+      const errores = [];
+
+      for (const tutor of tutoresValidados) {
+        try {
+          // Verificar si ya existe
+          const existente = await tx.tutor.findUnique({
+            where: { rut: tutor.rut },
+          });
+
+          if (existente) {
+            errores.push({
+              rut: tutor.rut,
+              error: 'Ya existe un tutor con este RUT',
+            });
+            continue;
+          }
+
+          const tutorCreado = await tx.tutor.create({
+            data: {
+              ...tutor,
+              centro_id: centro_id,
+            },
+          });
+
+          creados.push(tutorCreado);
+        } catch (error: any) {
+          errores.push({
+            rut: tutor.rut,
+            error: error.message,
+          });
+        }
+      }
+
+      return { creados, errores };
+    });
+
+    return ApiResponseUtil.success(res, 201, 'Carga masiva de tutores completada', {
+      total_procesados: tutores.length,
+      exitosos: resultados.creados.length,
+      fallidos: resultados.errores.length,
+      tutores_creados: resultados.creados,
+      errores: resultados.errores,
+    });
+  } catch (error: any) {
+    console.error('Error en CargaMasivaController.cargarTutores:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error en carga masiva de tutores',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// POST /api/carga-masiva/pacientes
+// Carga masiva de pacientes
+// ============================================
+
+export async function cargarPacientes(req: Request, res: Response) {
+  try {
+    const { pacientes } = req.body;
+
+    if (!Array.isArray(pacientes) || pacientes.length === 0) {
+      return ApiResponseUtil.error(res, 400, 'Se requiere un array de pacientes');
+    }
+
+    // Validar todos los pacientes
+    const pacientesValidados = pacientes.map((paciente, index) => {
+      try {
+        return pacienteSchema.parse(paciente);
+      } catch (error: any) {
+        throw new Error(`Error en paciente ${index + 1}: ${error.message}`);
+      }
+    });
+
+    // Insertar pacientes
+    const resultados = await prisma.$transaction(async (tx) => {
+      const creados = [];
+      const errores = [];
+
+      for (const paciente of pacientesValidados) {
+        try {
+          // Buscar tutor por RUT
+          const tutor = await tx.tutor.findUnique({
+            where: { rut: paciente.tutor_rut },
+          });
+
+          if (!tutor) {
+            errores.push({
+              nombre: paciente.nombre,
+              error: `No se encontró tutor con RUT ${paciente.tutor_rut}`,
+            });
+            continue;
+          }
+
+          // Extraer tutor_rut del objeto
+          const { tutor_rut, ...pacienteData } = paciente;
+
+          const pacienteCreado = await tx.paciente.create({
+            data: {
+              ...pacienteData,
+              tutor_id: tutor.id,
+            },
+          });
+
+          creados.push(pacienteCreado);
+        } catch (error: any) {
+          errores.push({
+            nombre: paciente.nombre,
+            error: error.message,
+          });
+        }
+      }
+
+      return { creados, errores };
+    });
+
+    return ApiResponseUtil.success(res, 201, 'Carga masiva de pacientes completada', {
+      total_procesados: pacientes.length,
+      exitosos: resultados.creados.length,
+      fallidos: resultados.errores.length,
+      pacientes_creados: resultados.creados,
+      errores: resultados.errores,
+    });
+  } catch (error: any) {
+    console.error('Error en CargaMasivaController.cargarPacientes:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error en carga masiva de pacientes',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// POST /api/carga-masiva/servicios
+// Carga masiva de servicios
+// ============================================
+
+export async function cargarServicios(req: Request, res: Response) {
+  try {
+    const { servicios } = req.body;
+
+    if (!Array.isArray(servicios) || servicios.length === 0) {
+      return ApiResponseUtil.error(res, 400, 'Se requiere un array de servicios');
+    }
+
+    // Validar todos los servicios
+    const serviciosValidados = servicios.map((servicio, index) => {
+      try {
+        return servicioSchema.parse(servicio);
+      } catch (error: any) {
+        throw new Error(`Error en servicio ${index + 1}: ${error.message}`);
+      }
+    });
+
+    // Insertar servicios
+    const serviciosCreados = await prisma.servicio.createMany({
+      data: serviciosValidados.map((servicio) => ({
+        ...servicio,
+        activo: true,
+      })),
+      skipDuplicates: true,
+    });
+
+    return ApiResponseUtil.success(res, 201, 'Carga masiva de servicios completada', {
+      total_procesados: servicios.length,
+      exitosos: serviciosCreados.count,
+    });
+  } catch (error: any) {
+    console.error('Error en CargaMasivaController.cargarServicios:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error en carga masiva de servicios',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// POST /api/carga-masiva/inventario
+// Carga masiva de inventario
+// ============================================
+
+export async function cargarInventario(req: Request, res: Response) {
+  try {
+    const { items } = req.body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return ApiResponseUtil.error(res, 400, 'Se requiere un array de items');
+    }
+
+    // Validar todos los items
+    const itemsValidados = items.map((item, index) => {
+      try {
+        return inventarioSchema.parse(item);
+      } catch (error: any) {
+        throw new Error(`Error en item ${index + 1}: ${error.message}`);
+      }
+    });
+
+    // Insertar items
+    const itemsCreados = await prisma.inventario.createMany({
+      data: itemsValidados,
+      skipDuplicates: true,
+    });
+
+    return ApiResponseUtil.success(res, 201, 'Carga masiva de inventario completada', {
+      total_procesados: items.length,
+      exitosos: itemsCreados.count,
+    });
+  } catch (error: any) {
+    console.error('Error en CargaMasivaController.cargarInventario:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error en carga masiva de inventario',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// GET /api/carga-masiva/plantillas
+// Obtener plantillas CSV de ejemplo
+// ============================================
+
+export async function obtenerPlantillas(req: Request, res: Response) {
+  try {
+    const plantillas = {
+      tutores: {
+        campos: ['rut', 'nombre_completo', 'telefono', 'email', 'direccion', 'comuna'],
+        ejemplo: [
+          {
+            rut: '12345678-9',
+            nombre_completo: 'Juan Pérez',
+            telefono: '+56912345678',
+            email: 'juan@example.com',
+            direccion: 'Calle Principal 123',
+            comuna: 'Santiago',
+          },
+        ],
+      },
+      pacientes: {
+        campos: [
+          'nombre',
+          'especie',
+          'raza',
+          'edad_anos',
+          'sexo',
+          'peso_kg',
+          'chip',
+          'color',
+          'estado_reproductivo',
+          'tutor_rut',
+          'centro_id',
+        ],
+        ejemplo: [
+          {
+            nombre: 'Rex',
+            especie: 'CANINO',
+            raza: 'Labrador',
+            edad_anos: 3,
+            sexo: 'MACHO',
+            peso_kg: 30.5,
+            chip: '123456789',
+            color: 'Dorado',
+            estado_reproductivo: 'CASTRADO',
+            tutor_rut: '12345678-9',
+            centro_id: 1,
+          },
+        ],
+      },
+      servicios: {
+        campos: ['nombre', 'tipo', 'precio', 'duracion_minutos', 'descripcion', 'centro_id'],
+        ejemplo: [
+          {
+            nombre: 'Consulta General',
+            tipo: 'CONSULTA',
+            precio: 25000,
+            duracion_minutos: 30,
+            descripcion: 'Consulta médica general',
+            centro_id: 1,
+          },
+        ],
+      },
+      inventario: {
+        campos: [
+          'nombre',
+          'categoria',
+          'sku',
+          'codigo_barra',
+          'stock_actual',
+          'stock_minimo',
+          'precio_compra',
+          'precio_venta',
+          'centro_id',
+        ],
+        ejemplo: [
+          {
+            nombre: 'Amoxicilina 500mg',
+            categoria: 'FARMACO',
+            sku: 'AMX-500',
+            codigo_barra: '7890123456789',
+            stock_actual: 100,
+            stock_minimo: 20,
+            precio_compra: 1000,
+            precio_venta: 1500,
+            centro_id: 1,
+          },
+        ],
+      },
+    };
+
+    return ApiResponseUtil.success(
+      res,
+      200,
+      'Plantillas obtenidas exitosamente',
+      plantillas
+    );
+  } catch (error: any) {
+    console.error('Error en CargaMasivaController.obtenerPlantillas:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al obtener plantillas',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// GET /api/carga-masiva/exportar
+// Exportar todos los datos del sistema
+// ============================================
+
+export async function exportarDatos(req: Request, res: Response) {
+  try {
+    const { centro_id } = req.query;
+
+    const where: any = centro_id ? { centro_id: parseInt(centro_id as string) } : {};
+
+    const [tutores, pacientes, servicios, inventario] = await Promise.all([
+      prisma.tutor.findMany({ where }),
+      prisma.paciente.findMany({ where }),
+      prisma.servicio.findMany({ where }),
+      prisma.inventario.findMany({ where }),
+    ]);
+
+    return ApiResponseUtil.success(res, 200, 'Datos exportados exitosamente', {
+      fecha_exportacion: new Date().toISOString(),
+      tutores,
+      pacientes,
+      servicios,
+      inventario,
+    });
+  } catch (error: any) {
+    console.error('Error en CargaMasivaController.exportarDatos:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al exportar datos',
+      error.message
+    );
+  }
+}

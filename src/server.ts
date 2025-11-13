@@ -20,7 +20,10 @@ import citasRoutes from './routes/citas.routes';
 import fichasRoutes from './routes/fichas.routes';
 import hospitalizacionRoutes from './routes/hospitalizacion.routes';
 import cirugiasRoutes from './routes/cirugias.routes';
-import inventarioRoutes from './routes/inventario.routes';
+// import inventarioRoutes from './routes/inventario.routes'; // DISABLED
+// import serviciosRoutes from './routes/servicios.routes'; // DISABLED - Schema faltante
+// import reportesRoutes from './routes/reportes.routes'; // DISABLED
+// import cargaMasivaRoutes from './routes/carga-masiva.routes'; // DISABLED
 import facturacionRoutes from './routes/facturacion.routes';
 import telemedicinRoutes from './routes/telemedicina.routes';
 
@@ -95,7 +98,10 @@ app.use('/api/citas', citasRoutes);
 app.use('/api/fichas-clinicas', fichasRoutes);
 app.use('/api/hospitalizacion', hospitalizacionRoutes);
 app.use('/api/cirugias', cirugiasRoutes);
-app.use('/api/inventario', inventarioRoutes);
+// app.use('/api/inventario', inventarioRoutes); // DISABLED
+// app.use('/api/servicios', serviciosRoutes); // DISABLED
+// app.use('/api/reportes', reportesRoutes); // DISABLED
+// app.use('/api/carga-masiva', cargaMasivaRoutes); // DISABLED
 app.use('/api/facturacion', facturacionRoutes);
 app.use('/api/telemedicina', telemedicinRoutes);
 

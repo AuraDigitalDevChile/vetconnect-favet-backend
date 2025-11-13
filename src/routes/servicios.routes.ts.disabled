@@ -1,0 +1,20 @@
+import { Router } from 'express';
+import * as serviciosController from '../controllers/servicios.controller';
+import { authMiddleware } from '../middleware/authMiddleware';
+
+const router = Router();
+
+// Todas las rutas requieren autenticación
+router.use(authMiddleware);
+
+// Rutas de servicios
+router.get('/', serviciosController.listarServicios);
+router.get('/:id', serviciosController.obtenerServicio);
+router.post('/', serviciosController.crearServicio);
+router.put('/:id', serviciosController.actualizarServicio);
+router.delete('/:id', serviciosController.eliminarServicio);
+
+// Aplicar servicio (descontar insumos)
+router.post('/:id/aplicar', serviciosController.aplicarServicio);
+
+export default router;

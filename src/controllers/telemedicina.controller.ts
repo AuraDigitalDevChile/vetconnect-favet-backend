@@ -217,10 +217,10 @@ export async function obtenerSesion(req: Request, res: Response) {
             paciente: {
               include: {
                 tutor: true,
-                registros_peso: {
-                  orderBy: { fecha: 'desc' },
-                  take: 5,
-                },
+                // registros_peso: {
+                //   orderBy: { fecha: 'desc' },
+                //   take: 5,
+                // },
                 vacunas: {
                   orderBy: { fecha_aplicacion: 'desc' },
                   take: 10,
@@ -238,11 +238,7 @@ export async function obtenerSesion(req: Request, res: Response) {
             ficha_clinica: {
               include: {
                 examenes: true,
-                recetas: {
-                  include: {
-                    items_receta: true,
-                  },
-                },
+                recetas: true,
               },
             },
           },

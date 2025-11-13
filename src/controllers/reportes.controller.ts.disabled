@@ -1,0 +1,598 @@
+/**
+ * REPORTES CONTROLLER
+ *
+ * Generación de reportes y estadísticas:
+ * - Reservas (tabular y gráfico)
+ * - Servicios prestados por personal
+ * - Libro de ventas
+ * - Movimientos de productos
+ * - Stock actual
+ * - Pacientes en hospital
+ */
+
+import { Request, Response } from 'express';
+import prisma from '../config/database';
+import { ApiResponseUtil } from '../utils/api-response.util';
+
+// ============================================
+// GET /api/reportes/reservas
+// Reporte de citas/reservas
+// ============================================
+
+export async function reporteReservas(req: Request, res: Response) {
+  try {
+    const { fecha_desde, fecha_hasta, centro_id, veterinario_id, tipo } = req.query;
+
+    const where: any = {};
+
+    if (centro_id) {
+      where.centro_id = parseInt(centro_id as string);
+    }
+
+    if (veterinario_id) {
+      where.veterinario_id = parseInt(veterinario_id as string);
+    }
+
+    if (tipo) {
+      where.tipo = tipo;
+    }
+
+    if (fecha_desde || fecha_hasta) {
+      where.fecha = {};
+      if (fecha_desde) {
+        where.fecha.gte = new Date(fecha_desde as string);
+      }
+      if (fecha_hasta) {
+        where.fecha.lte = new Date(fecha_hasta as string);
+      }
+    }
+
+    const citas = await prisma.cita.findMany({
+      where,
+      include: {
+        paciente: {
+          select: {
+            id: true,
+            nombre: true,
+            especie: true,
+          },
+        },
+        veterinario: {
+          select: {
+            id: true,
+            nombre_completo: true,
+          },
+        },
+        centro: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+      },
+      orderBy: {
+        fecha: 'desc',
+      },
+    });
+
+    // Agrupar por estado
+    const porEstado = citas.reduce((acc: any, cita) => {
+      acc[cita.estado] = (acc[cita.estado] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Agrupar por tipo
+    const porTipo = citas.reduce((acc: any, cita) => {
+      acc[cita.tipo] = (acc[cita.tipo] || 0) + 1;
+      return acc;
+    }, {});
+
+    return ApiResponseUtil.success(res, 200, 'Reporte de reservas generado', {
+      citas,
+      estadisticas: {
+        total: citas.length,
+        por_estado: porEstado,
+        por_tipo: porTipo,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error en ReportesController.reporteReservas:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al generar reporte de reservas',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// GET /api/reportes/servicios-personal
+// Reporte de servicios prestados por personal
+// ============================================
+
+export async function reporteServiciosPersonal(req: Request, res: Response) {
+  try {
+    const { fecha_desde, fecha_hasta, centro_id } = req.query;
+
+    const where: any = {};
+
+    if (centro_id) {
+      where.centro_id = parseInt(centro_id as string);
+    }
+
+    if (fecha_desde || fecha_hasta) {
+      where.fecha = {};
+      if (fecha_desde) {
+        where.fecha.gte = new Date(fecha_desde as string);
+      }
+      if (fecha_hasta) {
+        where.fecha.lte = new Date(fecha_hasta as string);
+      }
+    }
+
+    // Obtener citas completadas con sus fichas y facturas
+    const citas = await prisma.cita.findMany({
+      where: {
+        ...where,
+        estado: 'COMPLETADA',
+      },
+      include: {
+        veterinario: {
+          select: {
+            id: true,
+            nombre_completo: true,
+          },
+        },
+        ficha_clinica: {
+          include: {
+            factura: true,
+          },
+        },
+      },
+    });
+
+    // Agrupar por veterinario
+    const porVeterinario: any = {};
+
+    citas.forEach((cita) => {
+      const vetId = cita.veterinario_id;
+      const vetNombre = cita.veterinario.nombre_completo;
+
+      if (!porVeterinario[vetId]) {
+        porVeterinario[vetId] = {
+          veterinario_id: vetId,
+          nombre: vetNombre,
+          total_consultas: 0,
+          monto_total: 0,
+          comision_estimada: 0,
+        };
+      }
+
+      porVeterinario[vetId].total_consultas++;
+
+      if (cita.ficha_clinica?.factura) {
+        const montoFactura = parseFloat(cita.ficha_clinica.factura.monto_total.toString());
+        porVeterinario[vetId].monto_total += montoFactura;
+        // Comisión estimada del 15%
+        porVeterinario[vetId].comision_estimada += montoFactura * 0.15;
+      }
+    });
+
+    return ApiResponseUtil.success(
+      res,
+      200,
+      'Reporte de servicios por personal generado',
+      Object.values(porVeterinario)
+    );
+  } catch (error: any) {
+    console.error('Error en ReportesController.reporteServiciosPersonal:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al generar reporte',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// GET /api/reportes/libro-ventas
+// Libro de ventas
+// ============================================
+
+export async function reporteLibroVentas(req: Request, res: Response) {
+  try {
+    const { fecha_desde, fecha_hasta, centro_id } = req.query;
+
+    const where: any = {};
+
+    if (centro_id) {
+      where.centro_id = parseInt(centro_id as string);
+    }
+
+    if (fecha_desde || fecha_hasta) {
+      where.fecha_emision = {};
+      if (fecha_desde) {
+        where.fecha_emision.gte = new Date(fecha_desde as string);
+      }
+      if (fecha_hasta) {
+        where.fecha_emision.lte = new Date(fecha_hasta as string);
+      }
+    }
+
+    const facturas = await prisma.factura.findMany({
+      where,
+      include: {
+        centro: {
+          select: {
+            id: true,
+            nombre: true,
+            rut: true,
+          },
+        },
+        items: true,
+      },
+      orderBy: {
+        fecha_emision: 'desc',
+      },
+    });
+
+    // Calcular totales
+    const totales = facturas.reduce(
+      (acc, factura) => {
+        const subtotal = parseFloat(factura.subtotal.toString());
+        const iva = parseFloat(factura.iva.toString());
+        const total = parseFloat(factura.monto_total.toString());
+
+        acc.subtotal += subtotal;
+        acc.iva += iva;
+        acc.total += total;
+        acc.cantidad++;
+
+        return acc;
+      },
+      { subtotal: 0, iva: 0, total: 0, cantidad: 0 }
+    );
+
+    return ApiResponseUtil.success(res, 200, 'Libro de ventas generado', {
+      facturas,
+      totales,
+    });
+  } catch (error: any) {
+    console.error('Error en ReportesController.reporteLibroVentas:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al generar libro de ventas',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// GET /api/reportes/movimientos-inventario
+// Reporte de movimientos de inventario
+// ============================================
+
+export async function reporteMovimientosInventario(req: Request, res: Response) {
+  try {
+    const { fecha_desde, fecha_hasta, centro_id, tipo } = req.query;
+
+    const where: any = {};
+
+    if (tipo) {
+      where.tipo = tipo;
+    }
+
+    if (fecha_desde || fecha_hasta) {
+      where.fecha = {};
+      if (fecha_desde) {
+        where.fecha.gte = new Date(fecha_desde as string);
+      }
+      if (fecha_hasta) {
+        where.fecha.lte = new Date(fecha_hasta as string);
+      }
+    }
+
+    if (centro_id) {
+      where.inventario = {
+        centro_id: parseInt(centro_id as string),
+      };
+    }
+
+    const movimientos = await prisma.movimientoInventario.findMany({
+      where,
+      include: {
+        inventario: {
+          select: {
+            id: true,
+            nombre: true,
+            sku: true,
+            categoria: true,
+          },
+        },
+        usuario: {
+          select: {
+            id: true,
+            nombre_completo: true,
+          },
+        },
+      },
+      orderBy: {
+        fecha: 'desc',
+      },
+    });
+
+    // Agrupar por tipo
+    const porTipo = movimientos.reduce((acc: any, mov) => {
+      if (!acc[mov.tipo]) {
+        acc[mov.tipo] = {
+          tipo: mov.tipo,
+          cantidad_movimientos: 0,
+          cantidad_total: 0,
+        };
+      }
+
+      acc[mov.tipo].cantidad_movimientos++;
+      acc[mov.tipo].cantidad_total += mov.cantidad;
+
+      return acc;
+    }, {});
+
+    return ApiResponseUtil.success(
+      res,
+      200,
+      'Reporte de movimientos generado',
+      {
+        movimientos,
+        estadisticas: {
+          total: movimientos.length,
+          por_tipo: Object.values(porTipo),
+        },
+      }
+    );
+  } catch (error: any) {
+    console.error('Error en ReportesController.reporteMovimientosInventario:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al generar reporte',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// GET /api/reportes/stock-actual
+// Reporte de stock actual (para exportar Excel)
+// ============================================
+
+export async function reporteStockActual(req: Request, res: Response) {
+  try {
+    const { centro_id } = req.query;
+
+    const where: any = {};
+
+    if (centro_id) {
+      where.centro_id = parseInt(centro_id as string);
+    }
+
+    const items = await prisma.inventario.findMany({
+      where,
+      include: {
+        centro: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+        proveedor: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+      },
+      orderBy: {
+        nombre: 'asc',
+      },
+    });
+
+    // Calcular valor total del inventario
+    const valorTotal = items.reduce((acc, item) => {
+      const precio = item.precio_compra
+        ? parseFloat(item.precio_compra.toString())
+        : 0;
+      return acc + precio * item.stock_actual;
+    }, 0);
+
+    return ApiResponseUtil.success(res, 200, 'Reporte de stock generado', {
+      items,
+      estadisticas: {
+        total_items: items.length,
+        valor_total: valorTotal,
+        items_sin_stock: items.filter((i) => i.stock_actual === 0).length,
+        items_stock_critico: items.filter(
+          (i) => i.stock_actual <= i.stock_minimo && i.stock_actual > 0
+        ).length,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error en ReportesController.reporteStockActual:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al generar reporte',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// GET /api/reportes/pacientes-hospitalizados
+// Reporte de pacientes en hospital
+// ============================================
+
+export async function reportePacientesHospital(req: Request, res: Response) {
+  try {
+    const { centro_id } = req.query;
+
+    const where: any = {
+      estado: 'ACTIVA',
+    };
+
+    if (centro_id) {
+      where.paciente = {
+        centro_id: parseInt(centro_id as string),
+      };
+    }
+
+    const hospitalizaciones = await prisma.hospitalizacion.findMany({
+      where,
+      include: {
+        paciente: {
+          include: {
+            tutor: {
+              select: {
+                id: true,
+                nombre_completo: true,
+                telefono: true,
+                email: true,
+              },
+            },
+          },
+        },
+        veterinario: {
+          select: {
+            id: true,
+            nombre_completo: true,
+          },
+        },
+        box: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+        tratamientos: true,
+      },
+      orderBy: {
+        fecha_ingreso: 'desc',
+      },
+    });
+
+    // Calcular días de hospitalización
+    const hospitalizacionesConDias = hospitalizaciones.map((hosp) => ({
+      ...hosp,
+      dias_hospitalizacion: Math.floor(
+        (new Date().getTime() - new Date(hosp.fecha_ingreso).getTime()) /
+          (1000 * 60 * 60 * 24)
+      ),
+    }));
+
+    // Agrupar por gravedad
+    const porGravedad = hospitalizaciones.reduce((acc: any, hosp) => {
+      acc[hosp.gravedad] = (acc[hosp.gravedad] || 0) + 1;
+      return acc;
+    }, {});
+
+    return ApiResponseUtil.success(
+      res,
+      200,
+      'Reporte de hospitalizaciones generado',
+      {
+        hospitalizaciones: hospitalizacionesConDias,
+        estadisticas: {
+          total: hospitalizaciones.length,
+          por_gravedad: porGravedad,
+        },
+      }
+    );
+  } catch (error: any) {
+    console.error('Error en ReportesController.reportePacientesHospital:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al generar reporte',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// GET /api/reportes/dashboard
+// Estadísticas para dashboard principal
+// ============================================
+
+export async function reporteDashboard(req: Request, res: Response) {
+  try {
+    const { centro_id } = req.query;
+
+    const whereCenter: any = centro_id ? { centro_id: parseInt(centro_id as string) } : {};
+
+    const [
+      totalPacientes,
+      citasHoy,
+      hospitalizadosActivos,
+      stockCritico,
+      facturasDelMes,
+    ] = await Promise.all([
+      prisma.paciente.count({ where: { ...whereCenter, activo: true } }),
+
+      prisma.cita.count({
+        where: {
+          ...whereCenter,
+          fecha: new Date(),
+          estado: { in: ['PROGRAMADA', 'CONFIRMADA'] },
+        },
+      }),
+
+      prisma.hospitalizacion.count({
+        where: {
+          estado: 'ACTIVA',
+          paciente: whereCenter.centro_id ? { centro_id: whereCenter.centro_id } : undefined,
+        },
+      }),
+
+      prisma.inventario.count({
+        where: {
+          ...whereCenter,
+          stock_actual: { lte: prisma.inventario.fields.stock_minimo },
+        },
+      }),
+
+      prisma.factura.aggregate({
+        where: {
+          ...whereCenter,
+          fecha_emision: {
+            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          },
+        },
+        _sum: {
+          monto_total: true,
+        },
+        _count: true,
+      }),
+    ]);
+
+    return ApiResponseUtil.success(res, 200, 'Dashboard generado', {
+      pacientes_activos: totalPacientes,
+      citas_hoy: citasHoy,
+      pacientes_hospitalizados: hospitalizadosActivos,
+      items_stock_critico: stockCritico,
+      facturacion_mes: {
+        total: facturasDelMes._sum.monto_total || 0,
+        cantidad: facturasDelMes._count,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error en ReportesController.reporteDashboard:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al generar dashboard',
+      error.message
+    );
+  }
+}

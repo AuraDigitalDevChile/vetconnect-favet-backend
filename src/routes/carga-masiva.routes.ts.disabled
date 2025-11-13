@@ -1,0 +1,24 @@
+import { Router } from 'express';
+import * as cargaMasivaController from '../controllers/carga-masiva.controller';
+import { authMiddleware } from '../middleware/authMiddleware';
+import { authorize } from '../middleware/authMiddleware';
+
+const router = Router();
+
+// Todas las rutas requieren autenticación y permisos de ADMIN
+router.use(authMiddleware);
+router.use(authorize('ADMIN'));
+
+// Plantillas y guías
+router.get('/plantillas', cargaMasivaController.obtenerPlantillas);
+
+// Carga masiva
+router.post('/tutores', cargaMasivaController.cargarTutores);
+router.post('/pacientes', cargaMasivaController.cargarPacientes);
+router.post('/servicios', cargaMasivaController.cargarServicios);
+router.post('/inventario', cargaMasivaController.cargarInventario);
+
+// Exportación
+router.get('/exportar', cargaMasivaController.exportarDatos);
+
+export default router;

@@ -1,0 +1,548 @@
+/**
+ * INVENTARIO CONTROLLER
+ *
+ * Gestión completa de inventario:
+ * - CRUD de items
+ * - Movimientos de stock
+ * - Alertas de stock crítico
+ * - Búsqueda y filtros
+ */
+
+import { Request, Response } from 'express';
+import { z } from 'zod';
+import prisma from '../config/database';
+import { ApiResponseUtil } from '../utils/api-response.util';
+
+// ============================================
+// SCHEMAS DE VALIDACIÓN
+// ============================================
+
+const createItemSchema = z.object({
+  centro_id: z.number().int().positive(),
+  nombre: z.string().min(1, 'Nombre es requerido'),
+  categoria: z.enum(['FARMACO', 'INSUMO', 'PRODUCTO_VENTA', 'EQUIPAMIENTO', 'OTRO']),
+  sku: z.string().optional(),
+  codigo_barra: z.string().optional(),
+  stock_actual: z.number().min(0).default(0),
+  stock_minimo: z.number().min(0).default(0),
+  precio_compra: z.number().min(0).optional(),
+  precio_venta: z.number().min(0).optional(),
+  unidad_compra: z.string().optional(),
+  unidad_uso: z.string().optional(),
+  factor_conversion: z.number().positive().optional(),
+
+  // Campos específicos para fármacos
+  presentacion: z.string().optional(),
+  concentracion: z.string().optional(),
+  volumen_total: z.string().optional(),
+  fecha_vencimiento: z.string().optional(),
+  lote: z.string().optional(),
+  multidosis: z.boolean().optional(),
+
+  proveedor_id: z.number().int().positive().optional(),
+  ubicacion: z.string().optional(),
+  descripcion: z.string().optional(),
+});
+
+const updateItemSchema = createItemSchema.partial();
+
+const movimientoSchema = z.object({
+  inventario_id: z.number().int().positive(),
+  tipo: z.enum(['INGRESO_COMPRA', 'SALIDA_CONSUMO', 'SALIDA_VENTA', 'AJUSTE_INVENTARIO', 'BAJA_VENCIMIENTO', 'BAJA_DANO']),
+  cantidad: z.number().positive(),
+  usuario_id: z.number().int().positive(),
+  motivo: z.string().optional(),
+  orden_compra_id: z.number().int().positive().optional(),
+  factura_id: z.number().int().positive().optional(),
+});
+
+// ============================================
+// GET /api/inventario
+// Listar items de inventario con filtros
+// ============================================
+
+export async function listarInventario(req: Request, res: Response) {
+  try {
+    const {
+      centro_id,
+      categoria,
+      buscar,
+      stock_critico,
+      page = '1',
+      limit = '50',
+    } = req.query;
+
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+
+    // Construir filtros
+    const where: any = {};
+
+    if (centro_id) {
+      where.centro_id = parseInt(centro_id as string);
+    }
+
+    if (categoria) {
+      where.categoria = categoria;
+    }
+
+    if (buscar) {
+      where.OR = [
+        { nombre: { contains: buscar as string, mode: 'insensitive' } },
+        { sku: { contains: buscar as string, mode: 'insensitive' } },
+        { codigo_barra: { contains: buscar as string, mode: 'insensitive' } },
+      ];
+    }
+
+    if (stock_critico === 'true') {
+      where.stock_actual = { lte: prisma.inventario.fields.stock_minimo };
+    }
+
+    // Obtener items
+    const [items, total] = await Promise.all([
+      prisma.inventario.findMany({
+        where,
+        include: {
+          centro: {
+            select: {
+              id: true,
+              nombre: true,
+            },
+          },
+          proveedor: {
+            select: {
+              id: true,
+              nombre: true,
+            },
+          },
+          categoria_inventario: true,
+        },
+        orderBy: {
+          nombre: 'asc',
+        },
+        skip,
+        take: parseInt(limit as string),
+      }),
+      prisma.inventario.count({ where }),
+    ]);
+
+    return ApiResponseUtil.success(res, 200, 'Inventario obtenido exitosamente', {
+      items,
+      pagination: {
+        total,
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
+        pages: Math.ceil(total / parseInt(limit as string)),
+      },
+    });
+  } catch (error: any) {
+    console.error('Error en InventarioController.listarInventario:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al listar inventario',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// GET /api/inventario/:id
+// Obtener detalle de un item
+// ============================================
+
+export async function obtenerItem(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+
+    const item = await prisma.inventario.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        centro: true,
+        proveedor: true,
+        categoria_inventario: true,
+        movimientos: {
+          include: {
+            usuario: {
+              select: {
+                id: true,
+                nombre_completo: true,
+              },
+            },
+          },
+          orderBy: {
+            fecha: 'desc',
+          },
+          take: 20,
+        },
+      },
+    });
+
+    if (!item) {
+      return ApiResponseUtil.error(res, 404, 'Item no encontrado');
+    }
+
+    return ApiResponseUtil.success(res, 200, 'Item obtenido exitosamente', item);
+  } catch (error: any) {
+    console.error('Error en InventarioController.obtenerItem:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al obtener item',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// POST /api/inventario
+// Crear nuevo item de inventario
+// ============================================
+
+export async function crearItem(req: Request, res: Response) {
+  try {
+    const validatedData = createItemSchema.parse(req.body);
+
+    // Verificar si ya existe un item con el mismo SKU o código de barras
+    if (validatedData.sku || validatedData.codigo_barra) {
+      const existente = await prisma.inventario.findFirst({
+        where: {
+          OR: [
+            validatedData.sku ? { sku: validatedData.sku } : {},
+            validatedData.codigo_barra ? { codigo_barra: validatedData.codigo_barra } : {},
+          ],
+          centro_id: validatedData.centro_id,
+        },
+      });
+
+      if (existente) {
+        return ApiResponseUtil.error(
+          res,
+          400,
+          'Ya existe un item con ese SKU o código de barras'
+        );
+      }
+    }
+
+    const item = await prisma.inventario.create({
+      data: {
+        ...validatedData,
+        fecha_vencimiento: validatedData.fecha_vencimiento
+          ? new Date(validatedData.fecha_vencimiento)
+          : null,
+      },
+      include: {
+        centro: true,
+        proveedor: true,
+      },
+    });
+
+    return ApiResponseUtil.success(res, 201, 'Item creado exitosamente', item);
+  } catch (error: any) {
+    console.error('Error en InventarioController.crearItem:', error);
+
+    if (error instanceof z.ZodError) {
+      return ApiResponseUtil.error(
+        res,
+        400,
+        'Datos de entrada inválidos',
+        error.errors
+      );
+    }
+
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al crear item',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// PUT /api/inventario/:id
+// Actualizar item de inventario
+// ============================================
+
+export async function actualizarItem(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const validatedData = updateItemSchema.parse(req.body);
+
+    const itemExistente = await prisma.inventario.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!itemExistente) {
+      return ApiResponseUtil.error(res, 404, 'Item no encontrado');
+    }
+
+    const item = await prisma.inventario.update({
+      where: { id: parseInt(id) },
+      data: {
+        ...validatedData,
+        fecha_vencimiento: validatedData.fecha_vencimiento
+          ? new Date(validatedData.fecha_vencimiento)
+          : undefined,
+      },
+      include: {
+        centro: true,
+        proveedor: true,
+      },
+    });
+
+    return ApiResponseUtil.success(
+      res,
+      200,
+      'Item actualizado exitosamente',
+      item
+    );
+  } catch (error: any) {
+    console.error('Error en InventarioController.actualizarItem:', error);
+
+    if (error instanceof z.ZodError) {
+      return ApiResponseUtil.error(
+        res,
+        400,
+        'Datos de entrada inválidos',
+        error.errors
+      );
+    }
+
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al actualizar item',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// DELETE /api/inventario/:id
+// Eliminar item de inventario
+// ============================================
+
+export async function eliminarItem(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+
+    const item = await prisma.inventario.findUnique({
+      where: { id: parseInt(id) },
+    });
+
+    if (!item) {
+      return ApiResponseUtil.error(res, 404, 'Item no encontrado');
+    }
+
+    await prisma.inventario.delete({
+      where: { id: parseInt(id) },
+    });
+
+    return ApiResponseUtil.success(res, 200, 'Item eliminado exitosamente');
+  } catch (error: any) {
+    console.error('Error en InventarioController.eliminarItem:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al eliminar item',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// POST /api/inventario/movimiento
+// Registrar movimiento de inventario
+// ============================================
+
+export async function registrarMovimiento(req: Request, res: Response) {
+  try {
+    const validatedData = movimientoSchema.parse(req.body);
+
+    // Iniciar transacción
+    const resultado = await prisma.$transaction(async (tx) => {
+      // Obtener item actual
+      const item = await tx.inventario.findUnique({
+        where: { id: validatedData.inventario_id },
+      });
+
+      if (!item) {
+        throw new Error('Item no encontrado');
+      }
+
+      // Calcular nuevo stock
+      let nuevoStock = item.stock_actual;
+
+      if (validatedData.tipo.startsWith('INGRESO')) {
+        nuevoStock += validatedData.cantidad;
+      } else if (validatedData.tipo.startsWith('SALIDA') || validatedData.tipo.startsWith('BAJA')) {
+        nuevoStock -= validatedData.cantidad;
+
+        if (nuevoStock < 0) {
+          throw new Error('Stock insuficiente');
+        }
+      }
+
+      // Registrar movimiento
+      const movimiento = await tx.movimientoInventario.create({
+        data: {
+          inventario_id: validatedData.inventario_id,
+          tipo: validatedData.tipo,
+          cantidad: validatedData.cantidad,
+          stock_anterior: item.stock_actual,
+          stock_nuevo: nuevoStock,
+          usuario_id: validatedData.usuario_id,
+          motivo: validatedData.motivo,
+          orden_compra_id: validatedData.orden_compra_id,
+          factura_id: validatedData.factura_id,
+        },
+      });
+
+      // Actualizar stock del item
+      await tx.inventario.update({
+        where: { id: validatedData.inventario_id },
+        data: { stock_actual: nuevoStock },
+      });
+
+      return movimiento;
+    });
+
+    return ApiResponseUtil.success(
+      res,
+      201,
+      'Movimiento registrado exitosamente',
+      resultado
+    );
+  } catch (error: any) {
+    console.error('Error en InventarioController.registrarMovimiento:', error);
+
+    if (error instanceof z.ZodError) {
+      return ApiResponseUtil.error(
+        res,
+        400,
+        'Datos de entrada inválidos',
+        error.errors
+      );
+    }
+
+    return ApiResponseUtil.error(
+      res,
+      500,
+      error.message || 'Error al registrar movimiento',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// GET /api/inventario/alertas
+// Obtener items con stock crítico
+// ============================================
+
+export async function obtenerAlertas(req: Request, res: Response) {
+  try {
+    const { centro_id } = req.query;
+
+    const where: any = {
+      stock_actual: {
+        lte: prisma.inventario.fields.stock_minimo,
+      },
+    };
+
+    if (centro_id) {
+      where.centro_id = parseInt(centro_id as string);
+    }
+
+    const items = await prisma.inventario.findMany({
+      where,
+      include: {
+        centro: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+      },
+      orderBy: {
+        stock_actual: 'asc',
+      },
+    });
+
+    return ApiResponseUtil.success(
+      res,
+      200,
+      'Alertas obtenidas exitosamente',
+      items
+    );
+  } catch (error: any) {
+    console.error('Error en InventarioController.obtenerAlertas:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al obtener alertas',
+      error.message
+    );
+  }
+}
+
+// ============================================
+// GET /api/inventario/estadisticas
+// Obtener estadísticas del inventario
+// ============================================
+
+export async function obtenerEstadisticas(req: Request, res: Response) {
+  try {
+    const { centro_id } = req.query;
+
+    const where: any = {};
+    if (centro_id) {
+      where.centro_id = parseInt(centro_id as string);
+    }
+
+    const [
+      totalItems,
+      valorTotal,
+      itemsCriticos,
+      porCategoria,
+    ] = await Promise.all([
+      prisma.inventario.count({ where }),
+      prisma.inventario.aggregate({
+        where,
+        _sum: {
+          stock_actual: true,
+        },
+      }),
+      prisma.inventario.count({
+        where: {
+          ...where,
+          stock_actual: {
+            lte: prisma.inventario.fields.stock_minimo,
+          },
+        },
+      }),
+      prisma.inventario.groupBy({
+        by: ['categoria'],
+        where,
+        _count: true,
+        _sum: {
+          stock_actual: true,
+        },
+      }),
+    ]);
+
+    return ApiResponseUtil.success(res, 200, 'Estadísticas obtenidas exitosamente', {
+      total_items: totalItems,
+      stock_total: valorTotal._sum.stock_actual || 0,
+      items_criticos: itemsCriticos,
+      por_categoria: porCategoria,
+    });
+  } catch (error: any) {
+    console.error('Error en InventarioController.obtenerEstadisticas:', error);
+    return ApiResponseUtil.error(
+      res,
+      500,
+      'Error al obtener estadísticas',
+      error.message
+    );
+  }
+}

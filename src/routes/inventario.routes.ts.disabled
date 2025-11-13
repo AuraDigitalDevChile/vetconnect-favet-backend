@@ -1,0 +1,22 @@
+import { Router } from 'express';
+import * as inventarioController from '../controllers/inventario.controller';
+import { authMiddleware } from '../middleware/authMiddleware';
+
+const router = Router();
+
+// Todas las rutas requieren autenticación
+router.use(authMiddleware);
+
+// Rutas de inventario
+router.get('/', inventarioController.listarInventario);
+router.get('/alertas', inventarioController.obtenerAlertas);
+router.get('/estadisticas', inventarioController.obtenerEstadisticas);
+router.get('/:id', inventarioController.obtenerItem);
+router.post('/', inventarioController.crearItem);
+router.put('/:id', inventarioController.actualizarItem);
+router.delete('/:id', inventarioController.eliminarItem);
+
+// Movimientos
+router.post('/movimiento', inventarioController.registrarMovimiento);
+
+export default router;
