@@ -28,8 +28,13 @@ import proveedoresRoutes from './routes/proveedores.routes';
 import ordenesCompraRoutes from './routes/ordenes-compra.routes';
 import cajaRoutes from './routes/caja.routes';
 import facturacionRoutes from './routes/facturacion.routes';
-// import telemedicinRoutes from './routes/telemedicina.routes'; // DISABLED - Model not in schema
-// import boletaRoutes from './routes/boleta.routes'; // DISABLED - Model not in schema
+import telemedicinRoutes from './routes/telemedicina.routes';
+import boletaRoutes from './routes/boleta.routes';
+import presupuestosRoutes from './routes/presupuestos.routes';
+import examenesRoutes from './routes/examenes.routes';
+import recetasRoutes from './routes/recetas.routes';
+import conveniosRoutes from './routes/convenios.routes';
+import boxesRoutes from './routes/boxes.routes';
 
 // Middleware de errores
 import { errorHandler } from './middleware/error.middleware';
@@ -110,8 +115,13 @@ app.use('/api/proveedores', proveedoresRoutes);
 app.use('/api/ordenes-compra', ordenesCompraRoutes);
 app.use('/api/caja', cajaRoutes);
 app.use('/api/facturacion', facturacionRoutes);
-// app.use('/api/telemedicina', telemedicinRoutes); // DISABLED - Model not in schema
-// app.use('/api/boleta', boletaRoutes); // DISABLED - Model not in schema
+app.use('/api/telemedicina', telemedicinRoutes);
+app.use('/api/boleta', boletaRoutes);
+app.use('/api/presupuestos', presupuestosRoutes);
+app.use('/api/examenes', examenesRoutes);
+app.use('/api/recetas', recetasRoutes);
+app.use('/api/convenios', conveniosRoutes);
+app.use('/api/boxes', boxesRoutes);
 
 // ==========================================
 // MANEJO DE ERRORES
