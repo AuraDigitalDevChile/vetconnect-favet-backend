@@ -514,4 +514,86 @@ export class PacientesController {
       ApiResponseUtils.serverError(res, 'Error al obtener historial médico');
     }
   }
+
+  /**
+   * PATCH /api/pacientes/:id/fallecido
+   * Marcar paciente como fallecido
+   */
+  static async marcarFallecido(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { fecha_fallecimiento, causa } = req.body;
+
+      // Verificar que el paciente existe
+      const pacienteExiste = await prisma.paciente.findUnique({
+        where: { id: parseInt(id) },
+      });
+
+      if (!pacienteExiste) {
+        ApiResponseUtils.notFound(res, 'Paciente no encontrado');
+        return;
+      }
+
+      if (pacienteExiste.fallecido) {
+        ApiResponseUtils.badRequest(res, 'El paciente ya está marcado como fallecido');
+        return;
+      }
+
+      // Marcar como fallecido y cancelar citas futuras
+      const fechaFallecimiento = fecha_fallecimiento ? new Date(fecha_fallecimiento) : new Date();
+
+      await prisma.$transaction(async (tx) => {
+        // Actualizar paciente
+        await tx.paciente.update({
+          where: { id: parseInt(id) },
+          data: {
+            fallecido: true,
+            fecha_fallecimiento: fechaFallecimiento,
+            notas: pacienteExiste.notas
+              ? `${pacienteExiste.notas}\n\n[FALLECIDO] ${fechaFallecimiento.toISOString().split('T')[0]}${
+                  causa ? ` - Causa: ${causa}` : ''
+                }`
+              : `[FALLECIDO] ${fechaFallecimiento.toISOString().split('T')[0]}${
+                  causa ? ` - Causa: ${causa}` : ''
+                }`,
+          },
+        });
+
+        // Cancelar citas futuras programadas o confirmadas
+        await tx.cita.updateMany({
+          where: {
+            paciente_id: parseInt(id),
+            fecha: { gte: fechaFallecimiento },
+            estado: { in: ['PROGRAMADA', 'CONFIRMADA'] },
+          },
+          data: {
+            estado: 'CANCELADA',
+            motivo_cancelacion: 'Paciente fallecido',
+          },
+        });
+      });
+
+      const pacienteActualizado = await prisma.paciente.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+          tutor: {
+            select: {
+              id: true,
+              nombre_completo: true,
+              telefono: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      ApiResponseUtils.success(res, {
+        paciente: pacienteActualizado,
+        message: 'Paciente marcado como fallecido. Se han cancelado las citas futuras.',
+      });
+    } catch (error) {
+      console.error('Error al marcar paciente como fallecido:', error);
+      ApiResponseUtils.serverError(res, 'Error al marcar paciente como fallecido');
+    }
+  }
 }

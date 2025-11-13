@@ -708,4 +708,116 @@ export class FacturacionController {
       res.status(500).json(ApiResponseUtil.error('Error al obtener estadísticas', error.message));
     }
   }
+
+  /**
+   * Registrar venta desde POS
+   * POST /api/facturacion/pos
+   */
+  static async registrarVentaPOS(req: Request, res: Response): Promise<void> {
+    try {
+      const datos = facturaSchema.parse(req.body);
+
+      // Crear factura con items en una transacción
+      const factura = await prisma.$transaction(async (tx) => {
+        // Crear factura
+        const nuevaFactura = await tx.factura.create({
+          data: {
+            centro_id: datos.centro_id,
+            paciente_id: datos.paciente_id,
+            tutor_id: datos.tutor_id,
+            usuario_id: datos.usuario_id,
+            numero_factura: datos.numero_factura,
+            tipo_documento: datos.tipo_documento,
+            fecha_vencimiento: datos.fecha_vencimiento ? new Date(datos.fecha_vencimiento) : null,
+            subtotal: datos.subtotal,
+            descuento: datos.descuento,
+            iva: datos.iva,
+            total: datos.total,
+            metodo_pago: datos.metodo_pago,
+            estado: datos.estado,
+            observaciones: datos.observaciones,
+            folio_sii: datos.folio_sii,
+          },
+        });
+
+        // Crear items
+        await tx.itemFactura.createMany({
+          data: datos.items.map((item) => ({
+            factura_id: nuevaFactura.id,
+            tipo_item: item.tipo_item,
+            descripcion: item.descripcion,
+            cantidad: item.cantidad,
+            precio_unitario: item.precio_unitario,
+            descuento: item.descuento,
+            subtotal: item.subtotal,
+          })),
+        });
+
+        // Si hay una caja activa y el pago está completo, registrar movimiento
+        if (datos.metodo_pago && datos.estado === 'PAGADA') {
+          const cajaActiva = await tx.caja.findFirst({
+            where: {
+              usuario_id: datos.usuario_id,
+              cerrada: false,
+            },
+          });
+
+          if (cajaActiva) {
+            // Registrar movimiento en caja
+            await tx.movimientoCaja.create({
+              data: {
+                caja_id: cajaActiva.id,
+                tipo: 'INGRESO',
+                monto: datos.total,
+                concepto: `Venta ${datos.tipo_documento} ${datos.numero_factura}`,
+                metodo_pago: datos.metodo_pago,
+                observaciones: `Factura ID: ${nuevaFactura.id}`,
+              },
+            });
+
+            // Actualizar total ingresos de caja
+            await tx.caja.update({
+              where: { id: cajaActiva.id },
+              data: {
+                total_ingresos: {
+                  increment: datos.total,
+                },
+              },
+            });
+          }
+        }
+
+        // Descontar inventario si hay items de tipo PRODUCTO o INSUMO
+        for (const item of datos.items) {
+          if (item.tipo_item === 'PRODUCTO' || item.tipo_item === 'INSUMO') {
+            // TODO: Buscar en inventario por descripción o agregar campo inventario_id
+            // Por ahora solo registramos, sin descontar automáticamente
+          }
+        }
+
+        return nuevaFactura;
+      });
+
+      // Obtener factura completa con relaciones
+      const facturaCompleta = await prisma.factura.findUnique({
+        where: { id: factura.id },
+        include: {
+          paciente: true,
+          tutor: true,
+          usuario: true,
+          items: true,
+        },
+      });
+
+      res.status(201).json(ApiResponseUtil.success(facturaCompleta, 'Venta registrada exitosamente'));
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json(ApiResponseUtil.error('Datos de venta inválidos', error.errors));
+        return;
+      }
+
+      console.error('Error al registrar venta POS:', error);
+      res.status(500).json(ApiResponseUtil.error('Error al registrar venta', error.message));
+    }
+  }
 }

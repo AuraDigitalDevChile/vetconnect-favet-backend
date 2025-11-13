@@ -10,6 +10,9 @@ const router = Router();
 // Estadísticas (debe ir antes de /:id para evitar conflictos)
 router.get('/estadisticas', FacturacionController.estadisticas);
 
+// POS - Registro de ventas
+router.post('/pos', FacturacionController.registrarVentaPOS);
+
 // Rutas principales de facturas
 router.get('/', FacturacionController.listar);
 router.get('/:id', FacturacionController.obtener);
