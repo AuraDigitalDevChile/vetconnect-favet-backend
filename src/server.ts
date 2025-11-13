@@ -22,6 +22,7 @@ import hospitalizacionRoutes from './routes/hospitalizacion.routes';
 import cirugiasRoutes from './routes/cirugias.routes';
 import inventarioRoutes from './routes/inventario.routes';
 import facturacionRoutes from './routes/facturacion.routes';
+import telemedicinRoutes from './routes/telemedicina.routes';
 
 // Middleware de errores
 import { errorHandler } from './middleware/error.middleware';
@@ -96,6 +97,7 @@ app.use('/api/hospitalizacion', hospitalizacionRoutes);
 app.use('/api/cirugias', cirugiasRoutes);
 app.use('/api/inventario', inventarioRoutes);
 app.use('/api/facturacion', facturacionRoutes);
+app.use('/api/telemedicina', telemedicinRoutes);
 
 // ==========================================
 // MANEJO DE ERRORES

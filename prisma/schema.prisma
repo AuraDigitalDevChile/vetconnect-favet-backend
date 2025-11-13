@@ -221,9 +221,10 @@ model Cita {
   box                  Box?          @relation(fields: [box_id], references: [id])
   centro               Centro        @relation(fields: [centro_id], references: [id], onDelete: Cascade)
   paciente             Paciente      @relation(fields: [paciente_id], references: [id], onDelete: Cascade)
-  tutor                Tutor         @relation(fields: [tutor_id], references: [id], onDelete: Cascade)
-  veterinario          Usuario       @relation("VeterinarioAsignado", fields: [veterinario_id], references: [id], onDelete: Cascade)
+  tutor                Tutor                 @relation(fields: [tutor_id], references: [id], onDelete: Cascade)
+  veterinario          Usuario               @relation("VeterinarioAsignado", fields: [veterinario_id], references: [id], onDelete: Cascade)
   ficha_clinica        FichaClinica?
+  sesion_telemedicina  SesionTelemedicina?
 
   @@index([centro_id])
   @@index([paciente_id])
@@ -980,4 +981,45 @@ enum TipoDocumento {
   FACTURA
   NOTA_CREDITO
   NOTA_DEBITO
+}
+
+enum EstadoSesionTelemedicina {
+  PROGRAMADA
+  EN_CURSO
+  FINALIZADA
+  CANCELADA
+  EXPIRADA
+}
+
+// ============================================
+// TELEMEDICINA
+// ============================================
+
+model SesionTelemedicina {
+  id                   Int                        @id @default(autoincrement())
+  cita_id              Int                        @unique
+  token_sala           String                     @unique @db.VarChar(500) // Token JWT único para la sala
+  url_veterinario      String                     @db.VarChar(1000) // URL para el veterinario
+  url_tutor            String                     @db.VarChar(1000) // URL para el tutor
+  room_name            String                     @unique @db.VarChar(200) // Nombre único de la sala
+  estado               EstadoSesionTelemedicina   @default(PROGRAMADA)
+  fecha_inicio         DateTime?
+  fecha_fin            DateTime?
+  duracion_minutos     Int?
+  link_enviado         Boolean                    @default(false)
+  fecha_envio_link     DateTime?
+  notas_sesion         String? // Notas tomadas durante la sesión
+  diagnostico          String? // Diagnóstico emitido durante la sesión
+  recetas_generadas    Int                        @default(0)
+  examenes_solicitados Int                        @default(0)
+  factura_id           Int? // Vincular con facturación
+  created_at           DateTime                   @default(now())
+  updated_at           DateTime                   @updatedAt
+  expira_en            DateTime // Fecha de expiración del link
+  cita                 Cita                       @relation(fields: [cita_id], references: [id], onDelete: Cascade)
+
+  @@index([cita_id])
+  @@index([room_name])
+  @@index([estado])
+  @@map("sesiones_telemedicina")
 }
