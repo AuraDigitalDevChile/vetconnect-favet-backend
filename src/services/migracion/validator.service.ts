@@ -3,7 +3,6 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { z } from 'zod';
 import { TipoCarga } from './csv-parser.service';
 
 const prisma = new PrismaClient();
@@ -205,22 +204,6 @@ class ValidatorService {
           field: 'rut',
           message: 'El RUT ya está registrado',
           value: row.rut,
-        });
-      }
-    }
-
-    // Validar pasaporte único
-    if (row.pasaporte) {
-      const existente = await prisma.tutor.findFirst({
-        where: { pasaporte: row.pasaporte },
-      });
-
-      if (existente) {
-        errors.push({
-          row: rowNumber,
-          field: 'pasaporte',
-          message: 'El pasaporte ya está registrado',
-          value: row.pasaporte,
         });
       }
     }

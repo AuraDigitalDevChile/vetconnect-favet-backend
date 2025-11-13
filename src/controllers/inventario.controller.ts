@@ -169,7 +169,7 @@ export const obtener = async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         ...item,
@@ -235,7 +235,7 @@ export const crear = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Item de inventario creado exitosamente',
       data: item,
@@ -308,7 +308,7 @@ export const actualizar = async (req: Request, res: Response) => {
       },
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Item de inventario actualizado exitosamente',
       data: item,
@@ -354,7 +354,7 @@ export const eliminar = async (req: Request, res: Response) => {
       data: { activo: false },
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Item de inventario eliminado exitosamente',
     });
@@ -430,7 +430,7 @@ export const ajustarStock = async (req: Request, res: Response) => {
       }),
     ]);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Movimiento de inventario registrado exitosamente',
       data: {
@@ -659,7 +659,7 @@ export const buscarPorPrecio = async (req: Request, res: Response) => {
       take: 10, // Limitar a 10 resultados
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: items,
       total: items.length,
@@ -678,7 +678,7 @@ export const buscarPorPrecio = async (req: Request, res: Response) => {
  * Descargar plantilla de inventario Excel
  * GET /api/inventario/descargar-plantilla
  */
-export const descargarPlantilla = async (req: Request, res: Response) => {
+export const descargarPlantilla = async (_req: Request, res: Response) => {
   try {
     const ExcelJS = require('exceljs');
 
@@ -801,7 +801,7 @@ export const descargarPlantilla = async (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', 'attachment; filename=plantilla_inventario.xlsx');
 
     // Enviar archivo
-    res.send(buffer);
+    return res.send(buffer);
   } catch (error: any) {
     console.error('Error al generar plantilla:', error);
     return res.status(500).json({
@@ -856,7 +856,7 @@ export const cargaMasiva = async (req: Request & { file?: any }, res: Response) 
 
     // Procesar filas (saltar header)
     const rows: any[] = [];
-    worksheet.eachRow((row, rowNumber) => {
+    worksheet.eachRow((row: any, rowNumber: number) => {
       if (rowNumber === 1) return; // Saltar header
       rows.push({ row, rowNumber });
     });
@@ -942,7 +942,7 @@ export const cargaMasiva = async (req: Request & { file?: any }, res: Response) 
     }
 
     // Respuesta
-    res.json({
+    return res.json({
       success: true,
       message: 'Carga masiva completada',
       data: {

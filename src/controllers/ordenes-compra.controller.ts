@@ -128,7 +128,7 @@ export const obtener = async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: orden,
     });
@@ -197,7 +197,7 @@ export const crear = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Orden de compra creada exitosamente',
       data: orden,
@@ -240,7 +240,7 @@ export const cambiarEstado = async (req: Request, res: Response) => {
       data: { estado },
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Estado actualizado exitosamente',
       data: orden,
@@ -281,7 +281,7 @@ export const recibirOrden = async (req: Request, res: Response) => {
       });
     }
 
-    if (orden.estado === EstadoOrdenCompra.RECIBIDA) {
+    if (orden.estado === EstadoOrdenCompra.RECIBIDA_COMPLETA) {
       return res.status(400).json({
         success: false,
         error: 'Esta orden ya fue recibida',
@@ -322,13 +322,13 @@ export const recibirOrden = async (req: Request, res: Response) => {
       await tx.ordenCompra.update({
         where: { id: parseInt(id) },
         data: {
-          estado: EstadoOrdenCompra.RECIBIDA,
+          estado: EstadoOrdenCompra.RECIBIDA_COMPLETA,
           fecha_recepcion: new Date(),
         },
       });
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Orden recibida e inventario actualizado exitosamente',
     });
@@ -360,7 +360,7 @@ export const eliminar = async (req: Request, res: Response) => {
       });
     }
 
-    if (orden.estado === EstadoOrdenCompra.RECIBIDA) {
+    if (orden.estado === EstadoOrdenCompra.RECIBIDA_COMPLETA) {
       return res.status(400).json({
         success: false,
         error: 'No se puede eliminar una orden que ya fue recibida',
@@ -371,7 +371,7 @@ export const eliminar = async (req: Request, res: Response) => {
       where: { id: parseInt(id) },
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Orden de compra eliminada exitosamente',
     });

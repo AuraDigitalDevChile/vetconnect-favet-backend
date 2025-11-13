@@ -77,7 +77,7 @@ export const obtenerCajaActiva = async (req: Request, res: Response) => {
       orderBy: { created_at: 'desc' },
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: caja,
     });
@@ -138,7 +138,7 @@ export const abrirCaja = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Caja abierta exitosamente',
       data: caja,
@@ -213,7 +213,7 @@ export const cerrarCaja = async (req: Request, res: Response) => {
       },
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Caja cerrada exitosamente',
       data: {
@@ -307,7 +307,7 @@ export const registrarMovimiento = async (req: Request, res: Response) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Movimiento registrado exitosamente',
     });

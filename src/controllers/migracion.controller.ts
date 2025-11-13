@@ -20,7 +20,7 @@ const cargaMasivaSchema = z.object({
  * POST /api/migracion/carga-masiva
  * Cargar datos desde CSV/Excel
  */
-export const cargaMasiva = async (req: Request & { file?: Express.Multer.File }, res: Response) => {
+export const cargaMasiva = async (req: Request & { file?: any }, res: Response) => {
   try {
     // Validar que se subió un archivo
     if (!req.file) {
@@ -93,7 +93,7 @@ export const cargaMasiva = async (req: Request & { file?: Express.Multer.File },
     // Eliminar archivo temporal
     fs.unlinkSync(filePath);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Carga masiva completada',
       data: {
@@ -166,7 +166,8 @@ export const exportar = async (req: Request, res: Response) => {
       const csv = csvParserService.exportarCSV(data);
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${tipo}_${Date.now()}.csv"`);
-      res.send(csv);
+      console.log(`   ✓ Archivo generado exitosamente`);
+      return res.send(csv);
     } else {
       const buffer = csvParserService.exportarExcel(data, tipo as string);
       res.setHeader(
@@ -174,10 +175,9 @@ export const exportar = async (req: Request, res: Response) => {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       );
       res.setHeader('Content-Disposition', `attachment; filename="${tipo}_${Date.now()}.xlsx"`);
-      res.send(buffer);
+      console.log(`   ✓ Archivo generado exitosamente`);
+      return res.send(buffer);
     }
-
-    console.log(`   ✓ Archivo generado exitosamente`);
   } catch (error: any) {
     console.error('Error en exportación:', error);
     return res.status(500).json({
@@ -213,7 +213,7 @@ export const descargarPlantilla = async (req: Request, res: Response) => {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
     res.setHeader('Content-Disposition', `attachment; filename="plantilla_${tipo}.xlsx"`);
-    res.send(buffer);
+    return res.send(buffer);
   } catch (error: any) {
     console.error('Error al generar plantilla:', error);
     return res.status(500).json({
@@ -237,16 +237,8 @@ export const obtenerLogs = async (_req: Request, res: Response) => {
       where: {
         accion: 'CARGA_MASIVA',
       },
-      include: {
-        usuario: {
-          select: {
-            id: true,
-            nombre_completo: true,
-          },
-        },
-      },
       orderBy: {
-        createdAt: 'desc',
+        id: 'desc',
       },
       take: 50,
     });

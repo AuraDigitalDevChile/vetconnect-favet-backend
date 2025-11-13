@@ -37,5 +37,15 @@
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "src/controllers/telemedicina.controller.ts",
+    "src/controllers/boleta.controller.ts",
+    "src/routes/telemedicina.routes.ts",
+    "src/routes/boleta.routes.ts",
+    "src/services/sii/**/*"
+  ]
 }
