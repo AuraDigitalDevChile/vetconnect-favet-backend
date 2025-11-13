@@ -54,11 +54,30 @@ const PORT = process.env.PORT || 3000;
 // Seguridad
 app.use(helmet());
 
-// CORS
+// CORS - CONFIGURACIÓN DE PRODUCCIÓN
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:8080',
+  'https://vetconnect-favet-demo.pages.dev',
+  'https://vetconnect-favet-backend.onrender.com'
+];
+
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:5173'],
+  origin: function (origin: string | undefined, callback: any) {
+    // Permitir requests sin origin (como mobile apps, curl, postman)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 app.use(cors(corsOptions));
 
