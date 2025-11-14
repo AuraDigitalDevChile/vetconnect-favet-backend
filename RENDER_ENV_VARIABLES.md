@@ -25,7 +25,7 @@ JWT_EXPIRES_IN=7d
 # ==========================================
 # CORS - IMPORTANTE: Incluir el frontend
 # ==========================================
-CORS_ORIGIN=http://localhost:8080,http://localhost:5173,http://localhost:3000,https://vetconnect-favet-demo.pages.dev
+CORS_ORIGIN=http://localhost:8080,http://localhost:8081,http://localhost:5173,http://localhost:3000,https://vetconnect-favet-demo.pages.dev
 
 # ==========================================
 # RATE LIMITING

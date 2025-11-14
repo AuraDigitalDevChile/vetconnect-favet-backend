@@ -55,13 +55,18 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 
 // CORS - CONFIGURACIÓN DE PRODUCCIÓN
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'http://localhost:8080',
-  'https://vetconnect-favet-demo.pages.dev',
-  'https://vetconnect-favet-backend.onrender.com'
-];
+// Obtener origins permitidos desde variable de entorno o usar defaults
+const corsOriginEnv = process.env.CORS_ORIGIN || '';
+const allowedOrigins = corsOriginEnv
+  ? corsOriginEnv.split(',').map(origin => origin.trim())
+  : [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:8080',
+      'http://localhost:8081',
+      'https://vetconnect-favet-demo.pages.dev',
+      'https://vetconnect-favet-backend.onrender.com'
+    ];
 
 const corsOptions = {
   origin: function (origin: string | undefined, callback: any) {
