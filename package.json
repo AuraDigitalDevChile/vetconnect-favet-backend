@@ -4,7 +4,8 @@
   "description": "Backend API REST para VetConnect FAVET - Sistema de Gestión Clínica Veterinaria",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev": "tsx watch src/server.ts",
+    "dev:old": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "postinstall": "prisma generate",
@@ -12,7 +13,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:push": "prisma db push",
-    "prisma:seed": "ts-node prisma/seed.ts",
+    "prisma:seed": "tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset",
     "db:seed": "npm run prisma:seed",
     "test": "jest",
@@ -59,7 +60,8 @@
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
-    "ts-node-dev": "^2.0.0"
+    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.20.6"
   },
   "engines": {
     "node": ">=18.0.0",
