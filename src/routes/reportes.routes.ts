@@ -8,7 +8,6 @@ import * as reportesController from '../controllers/reportes.controller';
 const router = Router();
 
 // Rutas de reportes (DEMO - sin autenticación para rapidez)
-router.get('/dashboard', reportesController.reporteDashboard);
 router.get('/reservas', reportesController.reporteReservas);
 router.get('/servicios-personal', reportesController.reporteServiciosPersonal);
 router.get('/libro-ventas', reportesController.libroVentas);

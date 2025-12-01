@@ -17,56 +17,53 @@ async function main() {
   console.log('🌱 Iniciando seed de base de datos...\n');
 
   // ==========================================
-  // 1. CENTROS VETERINARIOS FAVET (Vetlify GOD Edition)
+  // 1. CENTROS VETERINARIOS
   // ==========================================
-  console.log('📍 Creando centros veterinarios FAVET...');
+  console.log('📍 Creando centros veterinarios...');
 
-  // Centro 1: La Pintana (Principal)
-  const centroLaPintana = await prisma.centro.upsert({
-    where: { codigo: 'LA_PINTANA' },
+  const centroBilbao = await prisma.centro.upsert({
+    where: { codigo: 'BILBAO' },
     update: {},
     create: {
-      nombre: 'Centro Clínico Veterinario FAVET – La Pintana',
-      codigo: 'LA_PINTANA',
+      nombre: 'Hospital Clínico Veterinario Bilbao',
+      codigo: 'BILBAO',
       rut: '60805000-0', // RUT Universidad de Chile
       direccion: 'Av. Santa Rosa 11735, La Pintana, Santiago',
       telefono: '+56 2 2978 5700',
-      email: 'contacto@favet.uchile.cl',
+      email: 'contacto@bilbao.favet.uchile.cl',
+      capacidad_usuarios: 80,
+    },
+  });
+
+  const centroElRoble = await prisma.centro.upsert({
+    where: { codigo: 'ELROBLE' },
+    update: {},
+    create: {
+      nombre: 'Hospital Clínico Veterinario El Roble',
+      codigo: 'ELROBLE',
+      rut: '60805000-1', // RUT Universidad de Chile - sucursal
+      direccion: 'Av. Larraín 9750, La Reina, Santiago',
+      telefono: '+56 2 2978 5800',
+      email: 'contacto@elroble.favet.uchile.cl',
       capacidad_usuarios: 100,
     },
   });
 
-  // Centro 2: Oncología
-  const centroOncologia = await prisma.centro.upsert({
-    where: { codigo: 'ONCOLOGIA' },
+  const centroHospital = await prisma.centro.upsert({
+    where: { codigo: 'HOSPITAL' },
     update: {},
     create: {
-      nombre: 'Centro de Oncología Veterinaria',
-      codigo: 'ONCOLOGIA',
-      rut: '60805000-1', // RUT Universidad de Chile - especialidad
+      nombre: 'Hospital Docente Veterinario FAVET',
+      codigo: 'HOSPITAL',
+      rut: '60805000-2', // RUT Universidad de Chile - docencia
       direccion: 'Av. Santa Rosa 11735, La Pintana, Santiago',
-      telefono: '+56 2 2978 5720',
-      email: 'oncologia@favet.uchile.cl',
+      telefono: '+56 2 2978 5600',
+      email: 'contacto@hospital.favet.uchile.cl',
       capacidad_usuarios: 50,
     },
   });
 
-  // Centro 3: Especialidades
-  const centroEspecialidades = await prisma.centro.upsert({
-    where: { codigo: 'ESPECIALIDADES' },
-    update: {},
-    create: {
-      nombre: 'Centro de Especialidades Veterinarias',
-      codigo: 'ESPECIALIDADES',
-      rut: '60805000-2', // RUT Universidad de Chile - especialidades
-      direccion: 'Av. Santa Rosa 11735, La Pintana, Santiago',
-      telefono: '+56 2 2978 5730',
-      email: 'especialidades@favet.uchile.cl',
-      capacidad_usuarios: 60,
-    },
-  });
-
-  console.log('✅ 3 centros FAVET creados (La Pintana, Oncología, Especialidades)\n');
+  console.log('✅ 3 centros creados\n');
 
   // ==========================================
   // 2. USUARIOS (Diferentes roles)
@@ -75,14 +72,14 @@ async function main() {
 
   const passwordHash = await AuthUtils.hashPassword('admin123');
 
-  // Admin - Centro Principal
-  const adminFavet = await prisma.usuario.upsert({
-    where: { email: 'admin@favet.cl' },
+  // Admin - Bilbao
+  const adminBilbao = await prisma.usuario.upsert({
+    where: { email: 'admin@vetconnect.cl' },
     update: {},
     create: {
-      centro_id: centroLaPintana.id,
-      nombre_completo: 'Administrador FAVET',
-      email: 'admin@favet.cl',
+      centro_id: centroBilbao.id,
+      nombre_completo: 'Carlos Administrador',
+      email: 'admin@vetconnect.cl',
       rut: '12345678-9',
       password_hash: passwordHash,
       rol: 'ADMIN',
@@ -90,14 +87,14 @@ async function main() {
     },
   });
 
-  // Veterinarios - La Pintana
+  // Veterinarios
   const vet1 = await prisma.usuario.upsert({
-    where: { email: 'dra.serrat@favet.cl' },
+    where: { email: 'dra.rodriguez@vetconnect.cl' },
     update: {},
     create: {
-      centro_id: centroLaPintana.id,
-      nombre_completo: 'Dra. Constanza Serrat',
-      email: 'dra.serrat@favet.cl',
+      centro_id: centroBilbao.id,
+      nombre_completo: 'Dra. María Rodríguez',
+      email: 'dra.rodriguez@vetconnect.cl',
       rut: '11111111-1',
       password_hash: passwordHash,
       rol: 'VETERINARIO',
@@ -106,12 +103,12 @@ async function main() {
   });
 
   const vet2 = await prisma.usuario.upsert({
-    where: { email: 'dr.reyes@favet.cl' },
+    where: { email: 'dr.fernandez@vetconnect.cl' },
     update: {},
     create: {
-      centro_id: centroLaPintana.id,
-      nombre_completo: 'Dr. Martín Reyes',
-      email: 'dr.reyes@favet.cl',
+      centro_id: centroBilbao.id,
+      nombre_completo: 'Dr. Pedro Fernández',
+      email: 'dr.fernandez@vetconnect.cl',
       rut: '22222222-2',
       password_hash: passwordHash,
       rol: 'VETERINARIO',
@@ -119,14 +116,13 @@ async function main() {
     },
   });
 
-  // Veterinario Oncología
   const vet3 = await prisma.usuario.upsert({
-    where: { email: 'dra.lira@favet.cl' },
+    where: { email: 'dra.lopez@vetconnect.cl' },
     update: {},
     create: {
-      centro_id: centroOncologia.id,
-      nombre_completo: 'Dra. Sofía Lira',
-      email: 'dra.lira@favet.cl',
+      centro_id: centroElRoble.id,
+      nombre_completo: 'Dra. Ana López',
+      email: 'dra.lopez@vetconnect.cl',
       rut: '33333333-3',
       password_hash: passwordHash,
       rol: 'VETERINARIO',
@@ -136,12 +132,12 @@ async function main() {
 
   // Recepcionistas
   const recep1 = await prisma.usuario.upsert({
-    where: { email: 'daniela.recepcion@favet.cl' },
+    where: { email: 'sofia.recepcion@vetconnect.cl' },
     update: {},
     create: {
-      centro_id: centroLaPintana.id,
-      nombre_completo: 'Daniela González',
-      email: 'daniela.recepcion@favet.cl',
+      centro_id: centroBilbao.id,
+      nombre_completo: 'Sofía Recepcionista',
+      email: 'sofia.recepcion@vetconnect.cl',
       rut: '44444444-4',
       password_hash: passwordHash,
       rol: 'RECEPCIONISTA',
@@ -150,7 +146,7 @@ async function main() {
   });
 
   const recep2 = await prisma.usuario.upsert({
-    where: { email: 'juan.recepcion@favet.cl' },
+    where: { email: 'juan.recepcion@vetconnect.cl' },
     update: {},
     create: {
       centro_id: centroElRoble.id,
